@@ -164,12 +164,23 @@ st.markdown(f"""
 # ---------------------------------------------------------------------------
 authenticator, auth_config = setup_authentication()
 
-name, authentication_status, username = authenticator.login("Login", "main")
+try:
+    authenticator.login(location="main")
+except Exception:
+    # Fallback for different streamlit-authenticator versions
+    try:
+        authenticator.login("Login", "main")
+    except Exception:
+        pass
+
+authentication_status = st.session_state.get("authentication_status")
+name = st.session_state.get("name")
+username = st.session_state.get("username")
 
 if authentication_status is False:
     st.error("Invalid username or password")
     st.stop()
-elif authentication_status is None:
+elif not authentication_status:
     st.markdown(f'<div style="text-align:center; margin-top: 2rem;">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header" style="text-align:center;">Please log in to access AI Contract Lifecycle Management</div>', unsafe_allow_html=True)
     st.info("Default credentials: **admin** / **admin123** | **analyst** / **analyst123** | **viewer** / **viewer123**")
@@ -225,7 +236,10 @@ with st.sidebar:
     # User info
     role_class = f"role-{current_role}"
     st.markdown(f'Welcome, **{name}** <span class="auth-badge {role_class}">{current_role.upper()}</span>', unsafe_allow_html=True)
-    authenticator.logout("Logout", "sidebar")
+    try:
+        authenticator.logout(location="sidebar")
+    except Exception:
+        authenticator.logout("Logout", "sidebar")
     st.divider()
 
     api_key = st.text_input("OpenAI API Key", type="password", value=st.session_state["api_key"], help="Enter your OpenAI API key to enable AI features")

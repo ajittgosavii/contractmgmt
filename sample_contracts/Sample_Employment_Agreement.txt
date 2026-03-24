@@ -1,0 +1,114 @@
+EMPLOYMENT AGREEMENT
+
+This Employment Agreement ("Agreement") is made effective as of February 1, 2025,
+
+by and between:
+
+Nexus Digital Technologies Pvt. Ltd., a company incorporated under the Companies Act, 2013, having its registered office at Tower B, Cyber City, DLF Phase 2, Gurgaon, Haryana 122002 ("Employer" or "Company")
+
+and
+
+Priya Sharma, residing at B-42, Sector 15, Noida, UP 201301 ("Employee")
+
+1. POSITION AND DUTIES
+
+1.1 The Employer hereby employs the Employee as Senior AI/ML Engineer, reporting to the VP of Engineering.
+
+1.2 The Employee shall perform duties including but not limited to:
+(a) Design and development of machine learning models and AI solutions;
+(b) Leading a team of 5-8 engineers on AI product development;
+(c) Collaborating with product management on AI strategy and roadmap;
+(d) Conducting code reviews and maintaining engineering best practices;
+(e) Contributing to research publications and patent filings;
+(f) Such other duties as may be reasonably assigned by the Employer.
+
+1.3 The Employee's primary work location shall be the Gurgaon office, with a hybrid work arrangement of 3 days in-office and 2 days remote per week.
+
+2. COMPENSATION
+
+2.1 Base Salary: INR 45,00,000 (Indian Rupees Forty-Five Lakhs) per annum, payable monthly.
+
+2.2 Performance Bonus: Up to 20% of base salary, based on individual and company performance, payable annually.
+
+2.3 Joining Bonus: INR 3,00,000 (Indian Rupees Three Lakhs), payable with the first month's salary. This amount shall be refundable on a pro-rata basis if the Employee voluntarily terminates employment within 12 months.
+
+2.4 Stock Options: 5,000 Employee Stock Options (ESOPs) vesting over 4 years with a 1-year cliff. Vesting schedule: 25% after year 1, then monthly over the remaining 3 years.
+
+3. BENEFITS
+
+3.1 Health Insurance: Comprehensive medical insurance covering Employee, spouse, and up to 2 dependents (coverage: INR 10,00,000).
+3.2 Life Insurance: Company-provided term life insurance (coverage: 5x annual base salary).
+3.3 Paid Time Off: 24 days of paid leave per annum, plus 12 public holidays.
+3.4 Professional Development: Annual budget of INR 2,00,000 for conferences, certifications, and training.
+3.5 Relocation Assistance: Up to INR 1,50,000 for relocation expenses (if applicable).
+3.6 Provident Fund: Employer contribution as per statutory requirements.
+
+4. PROBATION PERIOD
+
+4.1 The Employee shall serve a probation period of six (6) months from the start date.
+4.2 During probation, either Party may terminate with fifteen (15) days written notice.
+4.3 Upon successful completion, the Employee shall be confirmed as a regular employee.
+
+5. CONFIDENTIALITY
+
+5.1 The Employee acknowledges that during the course of employment, they will have access to and become acquainted with Confidential Information.
+
+5.2 The Employee agrees to:
+(a) Keep all Confidential Information strictly confidential during and after employment;
+(b) Not use Confidential Information for personal benefit or the benefit of any third party;
+(c) Not copy, reproduce, or remove Confidential Information from Company premises without authorization;
+(d) Return all Company property and Confidential Information upon termination.
+
+5.3 This obligation survives termination of employment indefinitely for trade secrets, and for three (3) years for other Confidential Information.
+
+6. NON-COMPETE AND NON-SOLICITATION
+
+6.1 Non-Compete: For a period of twelve (12) months following termination, the Employee shall not engage in any business that directly competes with the Company's AI/ML products and services within India.
+
+6.2 Non-Solicitation: For a period of eighteen (18) months following termination, the Employee shall not:
+(a) Solicit or recruit any employee of the Company;
+(b) Solicit or divert any client or customer of the Company.
+
+6.3 The Company shall pay a non-compete allowance equal to 50% of the last drawn monthly salary for the duration of the non-compete period.
+
+7. INTELLECTUAL PROPERTY
+
+7.1 All inventions, patents, copyrights, trade secrets, and other intellectual property created by the Employee during the course of employment and related to the Company's business shall be the sole property of the Company.
+
+7.2 The Employee hereby assigns all rights, title, and interest in such intellectual property to the Company.
+
+7.3 The Employee shall cooperate in patent and copyright registration proceedings as reasonably requested.
+
+8. TERMINATION
+
+8.1 Notice Period: After confirmation, either Party may terminate employment with ninety (90) days written notice.
+
+8.2 Termination for Cause: The Company may terminate immediately without notice for:
+(a) Material breach of this Agreement;
+(b) Gross misconduct or dishonesty;
+(c) Conviction of a criminal offense;
+(d) Persistent underperformance after a documented performance improvement plan.
+
+8.3 Severance: In case of termination without cause by the Company, the Employee shall receive:
+(a) Three (3) months' base salary as severance pay;
+(b) Accelerated vesting of ESOPs scheduled to vest in the next 6 months;
+(c) Continuation of health insurance for 3 months post-termination.
+
+9. DISPUTE RESOLUTION
+
+9.1 Any dispute arising from this Agreement shall first be referred to the HR department for mediation.
+9.2 If unresolved within 30 days, disputes shall be settled by arbitration in New Delhi under the Arbitration and Conciliation Act, 1996.
+
+10. GOVERNING LAW
+
+This Agreement shall be governed by and construed in accordance with the laws of India.
+
+11. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire understanding between the Parties and supersedes all prior agreements, representations, and warranties. Any amendments must be in writing and signed by both Parties.
+
+________________________________          ________________________________
+Vikram Malhotra                           Priya Sharma
+VP, Engineering                           Employee
+Nexus Digital Technologies Pvt. Ltd.
+Date: February 1, 2025                    Date: February 1, 2025

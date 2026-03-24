@@ -1,0 +1,139 @@
+STATEMENT OF WORK #001
+
+This Statement of Work ("SOW") is entered into as of April 1, 2025,
+
+pursuant to the Master Service Agreement dated March 1, 2025 between:
+
+TechGlobal Solutions Inc. ("Client") and CloudFirst Services LLC ("Provider")
+
+PROJECT: Enterprise Data Migration to AWS Cloud Platform
+
+1. PROJECT OVERVIEW
+
+This SOW describes the scope, deliverables, timeline, and costs for migrating Client's on-premises data infrastructure (approximately 50TB across 12 databases) to Amazon Web Services (AWS), including database migration, ETL pipeline modernization, and data warehouse implementation.
+
+2. SCOPE OF WORK
+
+Phase 1: Assessment & Planning (Weeks 1-4)
+- Infrastructure discovery and dependency mapping
+- Data classification and sensitivity analysis
+- Migration strategy design (lift-and-shift vs re-platforming per workload)
+- Risk assessment and mitigation planning
+- Detailed project plan with milestones
+
+Phase 2: Environment Setup (Weeks 5-8)
+- AWS landing zone configuration (VPC, subnets, security groups)
+- IAM roles and policies setup
+- Network connectivity (VPN/Direct Connect) configuration
+- Monitoring and alerting infrastructure (CloudWatch, SNS)
+- Backup and disaster recovery setup
+
+Phase 3: Data Migration (Weeks 9-20)
+- Oracle database migration to Amazon RDS (4 databases, ~15TB)
+- SQL Server migration to Amazon Aurora PostgreSQL (5 databases, ~20TB)
+- MongoDB migration to Amazon DocumentDB (3 databases, ~15TB)
+- ETL pipeline migration from Informatica to AWS Glue
+- Data validation and integrity verification
+
+Phase 4: Testing & Optimization (Weeks 21-24)
+- Performance testing and query optimization
+- Security penetration testing
+- Disaster recovery testing
+- User acceptance testing (UAT)
+- Performance benchmarking against baseline
+
+Phase 5: Go-Live & Handover (Weeks 25-26)
+- Production cutover with rollback plan
+- Knowledge transfer and documentation
+- Operations runbook delivery
+- 2-week hypercare support
+
+3. DELIVERABLES
+
+D1: Migration Assessment Report (Week 4)
+D2: Architecture Design Document (Week 4)
+D3: AWS Environment Configuration (Week 8)
+D4: Migration Runbook (Week 8)
+D5: Migrated Databases - Phase 1 (Week 14)
+D6: Migrated Databases - Phase 2 (Week 20)
+D7: Test Results Report (Week 24)
+D8: Operations Runbook (Week 25)
+D9: Knowledge Transfer Documentation (Week 26)
+D10: Project Completion Certificate (Week 26)
+
+4. TEAM COMPOSITION
+
+Provider shall assign the following resources:
+- 1 Project Manager (full-time)
+- 1 Solutions Architect (full-time)
+- 2 Senior Database Engineers (full-time)
+- 2 Cloud Infrastructure Engineers (full-time)
+- 1 DevOps Engineer (full-time)
+- 1 Security Specialist (part-time, 50%)
+- 1 QA Engineer (Weeks 21-26)
+
+Client shall provide:
+- 1 Project Sponsor
+- 1 Technical Lead (point of contact)
+- DBA access to source databases
+- VPN credentials and network access
+- UAT testing resources
+
+5. TIMELINE
+
+Start Date: April 1, 2025
+End Date: September 30, 2025
+Duration: 26 weeks
+
+Key Milestones:
+- M1: Assessment Complete — April 28, 2025
+- M2: Environment Ready — May 26, 2025
+- M3: 50% Data Migrated — July 7, 2025
+- M4: 100% Data Migrated — August 18, 2025
+- M5: UAT Complete — September 15, 2025
+- M6: Go-Live — September 29, 2025
+
+6. PRICING AND PAYMENT
+
+Fixed Price: $850,000
+
+Payment Schedule:
+- 20% ($170,000) upon SOW execution
+- 15% ($127,500) upon M1 completion
+- 25% ($212,500) upon M3 completion
+- 25% ($212,500) upon M4 completion
+- 15% ($127,500) upon M6 completion and acceptance
+
+Additional charges (if applicable):
+- AWS infrastructure costs: Borne by Client directly
+- Travel expenses: Billed at actuals with prior approval
+- Change requests: Priced separately per change order
+
+7. ASSUMPTIONS AND DEPENDENCIES
+
+- Client will provide timely access to all source systems and environments.
+- Source databases are in a consistent and documented state.
+- Network bandwidth between on-premises and AWS is adequate (minimum 1 Gbps).
+- Client will complete UAT within 10 business days of notification.
+- No more than 2 hours of downtime is permitted during production cutover.
+- Changes to scope require a written Change Order signed by both Parties.
+
+8. ACCEPTANCE CRITERIA
+
+- All databases migrated with zero data loss verified by checksum validation.
+- Query performance within 10% of baseline benchmarks.
+- All security controls pass penetration testing.
+- 99.9% availability achieved during 2-week hypercare period.
+- Deliverables deemed accepted unless Client provides written rejection within 10 business days of delivery.
+
+9. RISKS AND MITIGATIONS
+
+R1: Data volume exceeds estimates → Mitigation: Buffer capacity in timeline; parallel migration streams
+R2: Legacy schema incompatibilities → Mitigation: Schema analysis in Phase 1; compatibility testing
+R3: Network latency issues → Mitigation: AWS Direct Connect; data transfer optimization
+R4: Application compatibility → Mitigation: Early integration testing; rollback procedures
+
+________________________________          ________________________________
+Michael Chen                              Sarah Thompson
+CIO, TechGlobal Solutions Inc.            MD, CloudFirst Services LLC
+Date: April 1, 2025                       Date: April 1, 2025

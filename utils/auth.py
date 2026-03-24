@@ -2,11 +2,16 @@
 
 import os
 import yaml
+import bcrypt
 import streamlit as st
 import streamlit_authenticator as stauth
-from pathlib import Path
 
 AUTH_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "auth.yaml")
+
+
+def _hash_password(password: str) -> str:
+    """Hash a password using bcrypt directly."""
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def _ensure_auth_config():
@@ -15,26 +20,25 @@ def _ensure_auth_config():
     os.makedirs(config_dir, exist_ok=True)
 
     if not os.path.exists(AUTH_CONFIG_PATH):
-        # Default users: admin/admin123, analyst/analyst123, viewer/viewer123
         default_config = {
             "credentials": {
                 "usernames": {
                     "admin": {
                         "email": "admin@company.com",
                         "name": "Admin User",
-                        "password": stauth.Hasher(["admin123"]).generate()[0],
+                        "password": _hash_password("admin123"),
                         "role": "admin",
                     },
                     "analyst": {
                         "email": "analyst@company.com",
                         "name": "Contract Analyst",
-                        "password": stauth.Hasher(["analyst123"]).generate()[0],
+                        "password": _hash_password("analyst123"),
                         "role": "analyst",
                     },
                     "viewer": {
                         "email": "viewer@company.com",
                         "name": "Viewer",
-                        "password": stauth.Hasher(["viewer123"]).generate()[0],
+                        "password": _hash_password("viewer123"),
                         "role": "viewer",
                     },
                 }
@@ -71,8 +75,11 @@ def get_user_role(username: str) -> str:
 
 def setup_authentication():
     """
-    Set up authentication and return (authenticator, name, authentication_status, username).
-    Call this early in app.py.
+    Set up authentication. Returns (authenticator, config).
+    After calling authenticator.login(), check st.session_state for:
+      - st.session_state["authentication_status"]
+      - st.session_state["name"]
+      - st.session_state["username"]
     """
     config = load_auth_config()
 
@@ -81,6 +88,7 @@ def setup_authentication():
         config["cookie"]["name"],
         config["cookie"]["key"],
         config["cookie"]["expiry_days"],
+        auto_hash=False,  # passwords are already bcrypt-hashed
     )
 
     return authenticator, config
@@ -111,7 +119,7 @@ def render_user_management():
         with col3:
             st.write(f"Role: {udata.get('role', 'viewer')}")
         with col4:
-            if uname != "admin":  # Prevent deleting admin
+            if uname != "admin":
                 if st.button("Remove", key=f"rm_{uname}"):
                     del config["credentials"]["usernames"][uname]
                     save_auth_config(config)
@@ -135,7 +143,7 @@ def render_user_management():
                 config["credentials"]["usernames"][new_username] = {
                     "email": new_email,
                     "name": new_name,
-                    "password": stauth.Hasher([new_password]).generate()[0],
+                    "password": _hash_password(new_password),
                     "role": new_role,
                 }
                 save_auth_config(config)

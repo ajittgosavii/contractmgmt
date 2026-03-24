@@ -1,0 +1,126 @@
+COMMERCIAL LEASE AGREEMENT
+
+This Commercial Lease Agreement ("Lease") is made effective as of June 1, 2025,
+
+by and between:
+
+Pinnacle Properties LLC, a limited liability company organized under the laws of California, with offices at 1 Market Street, Suite 3600, San Francisco, CA 94105 ("Landlord")
+
+and
+
+InnovateTech Inc., a Delaware corporation with principal offices at 555 Mission Street, San Francisco, CA 94105 ("Tenant")
+
+1. PREMISES
+
+The Landlord hereby leases to the Tenant the following commercial office space:
+
+Suite 800-850, 8th Floor
+One Embarcadero Center
+San Francisco, CA 94111
+
+Total Area: 15,000 square feet of Class A office space
+Parking: 25 reserved spaces in the building garage
+
+2. TERM
+
+Lease Start Date: June 1, 2025
+Lease End Date: May 31, 2030
+Duration: Five (5) years
+
+Option to Renew: Tenant shall have two (2) options to renew for additional three (3) year terms each, provided Tenant gives written notice at least 180 days prior to expiration and is not in default.
+
+3. RENT
+
+3.1 Base Monthly Rent: $112,500 ($90 per square foot per annum)
+
+3.2 Annual Escalation: Rent shall increase by 3% annually on each anniversary of the Lease Start Date.
+
+Year 1: $112,500/month ($1,350,000/year)
+Year 2: $115,875/month ($1,390,500/year)
+Year 3: $119,351/month ($1,432,215/year)
+Year 4: $122,932/month ($1,475,181/year)
+Year 5: $126,620/month ($1,519,437/year)
+
+Total 5-Year Lease Value: $7,167,333
+
+3.3 Rent is due on the 1st of each month. Late Fee: 5% of monthly rent if paid after the 5th of the month.
+
+3.4 Security Deposit: $337,500 (equivalent to 3 months' rent), to be held in an interest-bearing account and returned within 45 days of lease termination, less deductions for damages and unpaid obligations.
+
+4. OPERATING EXPENSES (NNN)
+
+4.1 This is a Triple Net (NNN) lease. In addition to Base Rent, Tenant shall pay its proportionate share (12.5%) of:
+(a) Property taxes;
+(b) Building insurance premiums;
+(c) Common area maintenance (CAM) charges.
+
+4.2 Estimated monthly NNN charges: $18,750 ($15 per square foot per annum)
+4.3 Actual charges reconciled annually with adjustments.
+4.4 Landlord shall provide an annual operating expense statement within 90 days of each calendar year end.
+
+5. PERMITTED USE
+
+5.1 The Premises shall be used solely for general office purposes, including software development, business operations, and ancillary uses.
+5.2 Tenant shall not use the Premises for any unlawful purpose or in violation of building codes and zoning ordinances.
+5.3 Tenant may operate a small kitchen/cafeteria for employee use.
+
+6. TENANT IMPROVEMENTS
+
+6.1 Tenant Improvement Allowance: Landlord shall provide $75 per square foot ($1,125,000 total) for Tenant's initial build-out.
+6.2 Any costs exceeding the TI Allowance shall be borne by the Tenant.
+6.3 All improvements become part of the building and property of the Landlord upon lease termination, unless Landlord requests removal.
+6.4 Tenant must obtain Landlord's written approval for all improvements, which shall not be unreasonably withheld.
+
+7. MAINTENANCE AND REPAIRS
+
+7.1 Landlord shall maintain: building structure, roof, exterior walls, common areas, HVAC systems, elevators, and building systems.
+7.2 Tenant shall maintain: the interior of the Premises in good condition, including flooring, paint, fixtures, and equipment.
+7.3 Tenant shall report any needed repairs to Landlord within 48 hours of discovery.
+
+8. INSURANCE
+
+8.1 Tenant shall maintain:
+(a) Commercial General Liability: $2,000,000 per occurrence;
+(b) Property Insurance covering Tenant's personal property and improvements;
+(c) Business Interruption Insurance;
+(d) Workers' Compensation as required by law.
+
+8.2 Landlord shall be named as additional insured on Tenant's CGL policy.
+8.3 Both Parties waive subrogation rights against the other.
+
+9. ASSIGNMENT AND SUBLETTING
+
+9.1 Tenant shall not assign this Lease or sublet any portion of the Premises without Landlord's prior written consent, which shall not be unreasonably withheld.
+9.2 Any permitted sublease shall not release Tenant from obligations under this Lease.
+9.3 Landlord shall receive 50% of any sublease premium (excess over Tenant's rent).
+
+10. DEFAULT AND REMEDIES
+
+10.1 Events of Default:
+(a) Failure to pay rent within 10 days of due date;
+(b) Failure to cure non-monetary breach within 30 days of written notice;
+(c) Bankruptcy or insolvency of Tenant;
+(d) Abandonment of Premises.
+
+10.2 Landlord's Remedies:
+(a) Terminate the Lease and recover damages;
+(b) Re-enter and re-let the Premises on Tenant's behalf;
+(c) Accelerate all remaining rent due under the Lease.
+
+11. EARLY TERMINATION
+
+Tenant may terminate early after the 36th month (June 1, 2028) by providing 9 months advance written notice and paying an early termination fee equal to 6 months' Base Rent at the then-current rate.
+
+12. GOVERNING LAW
+
+This Lease shall be governed by the laws of the State of California.
+
+13. ENTIRE AGREEMENT
+
+This Lease constitutes the entire agreement between the Parties. Amendments must be in writing signed by both Parties.
+
+________________________________          ________________________________
+Robert Chang                              Lisa Nakamura
+Managing Partner                          Chief Operating Officer
+Pinnacle Properties LLC                   InnovateTech Inc.
+Date: June 1, 2025                        Date: June 1, 2025

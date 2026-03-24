@@ -1,0 +1,102 @@
+NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement ("Agreement") is entered into as of January 15, 2025 ("Effective Date"),
+
+by and between:
+
+Infosys Limited, a company incorporated under the laws of India, having its registered office at Electronics City, Hosur Road, Bangalore 560100 ("Disclosing Party")
+
+and
+
+Acme Corporation, a Delaware corporation with principal offices at 500 Technology Drive, San Jose, CA 95134 ("Receiving Party")
+
+(collectively referred to as the "Parties").
+
+RECITALS
+
+WHEREAS, the Disclosing Party possesses certain confidential and proprietary information relating to its cloud computing platform, AI-powered contract management solutions, and related business strategies; and
+
+WHEREAS, the Receiving Party desires to receive certain confidential information for the purpose of evaluating a potential business partnership for enterprise software integration;
+
+NOW, THEREFORE, in consideration of the mutual covenants contained herein, the Parties agree as follows:
+
+1. DEFINITION OF CONFIDENTIAL INFORMATION
+
+"Confidential Information" means any and all non-public information, including but not limited to:
+(a) Trade secrets, source code, algorithms, and technical specifications;
+(b) Business plans, financial projections, and marketing strategies;
+(c) Customer lists, pricing models, and sales data;
+(d) Product roadmaps, research and development plans;
+(e) Employee information and organizational structure;
+(f) Any information marked as "Confidential" or reasonably understood to be confidential.
+
+2. OBLIGATIONS OF RECEIVING PARTY
+
+The Receiving Party shall:
+(a) Hold all Confidential Information in strict confidence using at least the same degree of care it uses to protect its own confidential information, but no less than reasonable care;
+(b) Not disclose Confidential Information to any third party without prior written consent of the Disclosing Party;
+(c) Use Confidential Information solely for the purpose of evaluating and facilitating the potential business partnership;
+(d) Limit access to Confidential Information to employees and contractors who have a need-to-know and are bound by confidentiality obligations at least as restrictive as those herein;
+(e) Immediately notify the Disclosing Party of any unauthorized use or disclosure.
+
+3. EXCLUSIONS FROM CONFIDENTIAL INFORMATION
+
+This Agreement does not apply to information that:
+(a) Is or becomes publicly available through no fault or action of the Receiving Party;
+(b) Was already known to the Receiving Party prior to disclosure, as evidenced by written records;
+(c) Is independently developed by the Receiving Party without use of or reference to Confidential Information;
+(d) Is lawfully received from a third party without restriction on disclosure;
+(e) Is required to be disclosed by law, regulation, or court order, provided that the Receiving Party gives the Disclosing Party prompt written notice to enable the Disclosing Party to seek a protective order.
+
+4. TERM AND TERMINATION
+
+(a) This Agreement shall remain in effect for a period of three (3) years from the Effective Date.
+(b) The obligations of confidentiality shall survive termination for an additional period of two (2) years.
+(c) Either Party may terminate this Agreement with thirty (30) days written notice.
+
+5. RETURN OF MATERIALS
+
+Upon termination or upon request by the Disclosing Party, the Receiving Party shall:
+(a) Return all documents and materials containing Confidential Information;
+(b) Destroy all copies, notes, and derivative materials;
+(c) Provide written certification of such return or destruction within fifteen (15) days.
+
+6. NO LICENSE
+
+Nothing in this Agreement grants the Receiving Party any license, right, or interest in any patent, copyright, trade secret, or other intellectual property right of the Disclosing Party.
+
+7. REMEDIES
+
+The Parties acknowledge that any breach of this Agreement may cause irreparable harm for which monetary damages would be inadequate. The Disclosing Party shall be entitled to seek injunctive relief in addition to all other remedies available at law or in equity.
+
+8. NON-SOLICITATION
+
+During the term of this Agreement and for twelve (12) months following its termination, neither Party shall directly solicit for employment any employee of the other Party with whom it had contact in connection with this Agreement.
+
+9. GOVERNING LAW AND JURISDICTION
+
+This Agreement shall be governed by and construed in accordance with the laws of the State of California, without regard to its conflict of laws principles. Any dispute arising under this Agreement shall be subject to the exclusive jurisdiction of the courts located in Santa Clara County, California.
+
+10. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL EITHER PARTY BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO THIS AGREEMENT, REGARDLESS OF WHETHER SUCH DAMAGES ARE BASED ON CONTRACT, TORT, STRICT LIABILITY, OR ANY OTHER THEORY.
+
+11. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire agreement between the Parties with respect to the subject matter hereof and supersedes all prior agreements, understandings, and negotiations. This Agreement may only be amended by a written instrument signed by both Parties.
+
+12. SEVERABILITY
+
+If any provision of this Agreement is found to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.
+
+13. ASSIGNMENT
+
+Neither Party may assign this Agreement without the prior written consent of the other Party, except in connection with a merger, acquisition, or sale of substantially all of its assets.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first written above.
+
+________________________________          ________________________________
+Rajesh Kumar                              Jennifer Williams
+VP, Strategic Partnerships                General Counsel
+Infosys Limited                           Acme Corporation
+Date: January 15, 2025                    Date: January 15, 2025
