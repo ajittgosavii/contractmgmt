@@ -156,6 +156,9 @@ st.markdown(f"""
     .role-admin {{ background: #DC2626; color: white; }}
     .role-analyst {{ background: #007CC3; color: white; }}
     .role-viewer {{ background: #94A3B8; color: white; }}
+    /* Compact login form */
+    .login-container {{ max-width: 420px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,124,195,0.10); border: 1px solid #E2E8F0; }}
+    .login-container h2 {{ color: #007CC3; margin-bottom: 1rem; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -164,27 +167,34 @@ st.markdown(f"""
 # ---------------------------------------------------------------------------
 authenticator, auth_config = setup_authentication()
 
-try:
-    authenticator.login(location="main")
-except Exception:
-    # Fallback for different streamlit-authenticator versions
-    try:
-        authenticator.login("Login", "main")
-    except Exception:
-        pass
-
+# Check if already authenticated (cookie/session)
 authentication_status = st.session_state.get("authentication_status")
+
+if not authentication_status:
+    # Centered login layout
+    _spacer_l, login_col, _spacer_r = st.columns([1, 1.5, 1])
+    with login_col:
+        st.markdown(f'<div style="text-align:center; margin-top: 1rem;">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sub-header" style="text-align:center;">AI Contract Lifecycle Management</div>', unsafe_allow_html=True)
+
+        try:
+            authenticator.login(location="main")
+        except Exception:
+            try:
+                authenticator.login("Login", "main")
+            except Exception:
+                pass
+
+        authentication_status = st.session_state.get("authentication_status")
+
+        if authentication_status is False:
+            st.error("Invalid username or password")
+        if not authentication_status:
+            st.caption("**Credentials:** admin / admin123 | analyst / analyst123 | viewer / viewer123")
+            st.stop()
+
 name = st.session_state.get("name")
 username = st.session_state.get("username")
-
-if authentication_status is False:
-    st.error("Invalid username or password")
-    st.stop()
-elif not authentication_status:
-    st.markdown(f'<div style="text-align:center; margin-top: 2rem;">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header" style="text-align:center;">Please log in to access AI Contract Lifecycle Management</div>', unsafe_allow_html=True)
-    st.info("Default credentials: **admin** / **admin123** | **analyst** / **analyst123** | **viewer** / **viewer123**")
-    st.stop()
 
 # User is authenticated from here
 current_user = username
