@@ -4,6 +4,7 @@ __pycache__/
 .streamlit/secrets.toml
 data/contracts.db
 uploads/
+config/auth.yaml
 *.egg-info/
 dist/
 build/

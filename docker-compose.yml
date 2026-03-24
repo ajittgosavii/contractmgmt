@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  cobalt-clm:
+    build: .
+    container_name: cobalt-contract-mgmt
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - ALERT_FROM_EMAIL=${ALERT_FROM_EMAIL}
+    volumes:
+      - clm_data:/app/data
+      - clm_uploads:/app/uploads
+      - clm_config:/app/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  clm_data:
+  clm_uploads:
+  clm_config:

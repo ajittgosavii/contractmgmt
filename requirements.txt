@@ -8,3 +8,13 @@ pdfplumber>=0.10.0
 fpdf2>=2.7.0
 openpyxl>=3.1.2
 python-dateutil>=2.8.0
+# OCR support
+pytesseract>=0.3.10
+Pillow>=10.0.0
+pdf2image>=1.16.0
+# Authentication
+streamlit-authenticator>=0.3.3
+bcrypt>=4.0.0
+PyYAML>=6.0
+# Email alerts
+schedule>=1.2.0

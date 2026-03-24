@@ -26,6 +26,7 @@ from agents.agent_drafter import ContractDrafterAgent
 from agents.agent_risk import ContractRiskAgent
 from agents.agent_comparator import ContractComparatorAgent
 from utils.file_parser import extract_text, save_uploaded_file
+from utils.ocr import extract_text_with_ocr
 from utils.config import CONTRACT_TYPES, CONTRACT_STATUSES, UPLOAD_DIR
 from utils.contract_templates import get_template_parameters, list_templates
 from utils.dashboard import (
@@ -40,6 +41,19 @@ from utils.export import (
     export_contract_docx,
     export_risk_report_pdf,
     export_contracts_excel,
+)
+from utils.auth import setup_authentication, check_permission, get_user_role, render_user_management
+from utils.audit import log_action, get_audit_log, get_user_activity_summary, get_contract_history
+from utils.audit import (
+    ACTION_UPLOAD, ACTION_EXTRACT, ACTION_SAVE, ACTION_DELETE, ACTION_GENERATE_DRAFT,
+    ACTION_REFINE_DRAFT, ACTION_RISK_ANALYSIS, ACTION_COMPARE, ACTION_EXPORT,
+    ACTION_BULK_UPLOAD, ACTION_EMAIL_ALERT, ACTION_LOGIN, ACTION_LOGOUT,
+    ACTION_CLAUSE_SAVE, ACTION_CLAUSE_DELETE,
+)
+from utils.email_alerts import send_expiry_alerts, send_risk_alert, get_expiring_contracts
+from utils.clause_library import (
+    save_clause, load_clauses, search_clauses, delete_clause, increment_usage,
+    get_popular_clauses, CLAUSE_CATEGORIES,
 )
 import utils.data_store as db
 
@@ -88,7 +102,6 @@ COBALT_LOGO_SVG = """
       <stop offset="100%" style="stop-color:#5B2D8E"/>
     </linearGradient>
   </defs>
-  <!-- Animated Cobalt network nodes -->
   <circle cx="20" cy="30" r="6" fill="url(#nodeGrad)" opacity="0.9">
     <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite"/>
   </circle>
@@ -98,7 +111,6 @@ COBALT_LOGO_SVG = """
   <circle cx="44" cy="44" r="4" fill="#5B2D8E" opacity="0.7">
     <animate attributeName="cy" values="44;40;44" dur="3s" repeatCount="indefinite"/>
   </circle>
-  <!-- Connection lines with pulse -->
   <line x1="26" y1="28" x2="40" y2="18" stroke="#00AEEF" stroke-width="1.5" opacity="0.5">
     <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
   </line>
@@ -108,14 +120,11 @@ COBALT_LOGO_SVG = """
   <line x1="44" y1="20" x2="44" y2="40" stroke="url(#cobaltGrad)" stroke-width="1" opacity="0.4">
     <animate attributeName="opacity" values="0.2;0.6;0.2" dur="3s" repeatCount="indefinite"/>
   </line>
-  <!-- Infosys text -->
   <text x="58" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="url(#cobaltGrad)">Infosys</text>
-  <!-- Cobalt badge -->
   <rect x="58" y="34" rx="3" ry="3" width="56" height="16" fill="url(#cobaltGrad)" opacity="0.9">
     <animate attributeName="opacity" values="0.85;1;0.85" dur="3s" repeatCount="indefinite"/>
   </rect>
   <text x="65" y="46" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white">COBALT</text>
-  <!-- AI CLM text -->
   <text x="122" y="28" font-family="Arial, sans-serif" font-size="11" font-weight="400" fill="#475569">AI Contract</text>
   <text x="122" y="46" font-family="Arial, sans-serif" font-size="11" font-weight="400" fill="#475569">Lifecycle Mgmt</text>
 </svg>
@@ -141,10 +150,39 @@ st.markdown(f"""
     .metric-label {{ font-size: 0.85rem; color: #64748B; }}
     .stTabs [data-baseweb="tab-list"] {{ gap: 8px; }}
     .stTabs [data-baseweb="tab"] {{ padding: 8px 20px; border-radius: 8px 8px 0 0; }}
-    .sidebar .sidebar-content {{ background: linear-gradient(180deg, #001F3F 0%, #003366 100%); }}
     .cobalt-footer {{ text-align: center; font-size: 0.75rem; color: #94A3B8; margin-top: 1rem; }}
+    .ocr-badge {{ background: #FBBF24; color: #1E293B; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }}
+    .auth-badge {{ display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }}
+    .role-admin {{ background: #DC2626; color: white; }}
+    .role-analyst {{ background: #007CC3; color: white; }}
+    .role-viewer {{ background: #94A3B8; color: white; }}
 </style>
 """, unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------------
+authenticator, auth_config = setup_authentication()
+
+name, authentication_status, username = authenticator.login("Login", "main")
+
+if authentication_status is False:
+    st.error("Invalid username or password")
+    st.stop()
+elif authentication_status is None:
+    st.markdown(f'<div style="text-align:center; margin-top: 2rem;">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header" style="text-align:center;">Please log in to access AI Contract Lifecycle Management</div>', unsafe_allow_html=True)
+    st.info("Default credentials: **admin** / **admin123** | **analyst** / **analyst123** | **viewer** / **viewer123**")
+    st.stop()
+
+# User is authenticated from here
+current_user = username
+current_role = get_user_role(current_user)
+
+# Log login (only once per session)
+if "login_logged" not in st.session_state:
+    log_action(current_user, ACTION_LOGIN, "session", details=f"Role: {current_role}")
+    st.session_state["login_logged"] = True
 
 # ---------------------------------------------------------------------------
 # Session state
@@ -171,11 +209,23 @@ def _get_agent(agent_name: str):
     return AGENT_PROFILES[agent_name]["class"](api_key=st.session_state["api_key"])
 
 
+def _smart_extract(uploaded_file) -> tuple[str, bool]:
+    """Extract text with OCR fallback. Returns (text, used_ocr)."""
+    file_bytes = uploaded_file.read()
+    uploaded_file.seek(0)  # Reset for potential re-read
+    return extract_text_with_ocr(file_bytes, uploaded_file.name)
+
+
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.markdown(f'<div class="cobalt-brand">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
+
+    # User info
+    role_class = f"role-{current_role}"
+    st.markdown(f'Welcome, **{name}** <span class="auth-badge {role_class}">{current_role.upper()}</span>', unsafe_allow_html=True)
+    authenticator.logout("Logout", "sidebar")
     st.divider()
 
     api_key = st.text_input("OpenAI API Key", type="password", value=st.session_state["api_key"], help="Enter your OpenAI API key to enable AI features")
@@ -184,19 +234,23 @@ with st.sidebar:
 
     st.divider()
 
-    page = st.radio(
-        "Navigation",
-        [
-            "🏠 Dashboard",
-            "🔍 Upload & Review",
-            "✍️ Draft Generation",
-            "🛡️ Risk Analysis",
-            "⚖️ Contract Comparison",
-            "📁 Contract Repository",
-            "🤖 AI Agents",
-        ],
-        label_visibility="collapsed",
-    )
+    nav_items = [
+        "🏠 Dashboard",
+        "🔍 Upload & Review",
+        "📦 Bulk Upload",
+        "✍️ Draft Generation",
+        "🛡️ Risk Analysis",
+        "⚖️ Contract Comparison",
+        "📁 Contract Repository",
+        "📚 Clause Library",
+        "📧 Email Alerts",
+        "📋 Audit Trail",
+        "🤖 AI Agents",
+    ]
+    if current_role == "admin":
+        nav_items.append("👥 User Management")
+
+    page = st.radio("Navigation", nav_items, label_visibility="collapsed")
 
     st.divider()
     st.markdown('<div class="cobalt-footer">Powered by OpenAI GPT-4o<br>Infosys Cobalt Cloud Platform</div>', unsafe_allow_html=True)
@@ -213,7 +267,7 @@ def render_dashboard():
     contracts_df = db.load_contracts()
 
     # KPI row
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         st.metric("Total Contracts", stats["total"])
     with c2:
@@ -222,8 +276,16 @@ def render_dashboard():
         st.metric("High Risk", stats["high_risk_count"], delta_color="inverse")
     with c4:
         st.metric("Expiring Soon", stats["expiring_soon"], delta_color="inverse")
+    with c5:
+        st.metric("Avg Risk Score", stats["avg_risk"])
 
     st.divider()
+
+    # Expiring contracts alert banner
+    if stats["expiring_soon"] > 0:
+        expiring = get_expiring_contracts(contracts_df, 30)
+        if not expiring.empty:
+            st.warning(f"**{len(expiring)} contract(s) expiring within 30 days!** Go to **Email Alerts** to notify stakeholders.")
 
     if contracts_df.empty:
         st.info("No contracts in the repository yet. Upload your first contract via **Upload & Review**.")
@@ -241,31 +303,51 @@ def render_dashboard():
     with col4:
         st.plotly_chart(expiring_contracts_timeline(contracts_df), use_container_width=True)
 
-    # Recent contracts table
     st.subheader("Recent Contracts")
     display_cols = ["filename", "contract_type", "status", "risk_score", "risk_level", "upload_date"]
     available = [c for c in display_cols if c in contracts_df.columns]
     st.dataframe(contracts_df[available].head(10), use_container_width=True)
 
+    # Recent audit activity
+    st.subheader("Recent Activity")
+    audit_df = get_audit_log(limit=10)
+    if not audit_df.empty:
+        st.dataframe(audit_df[["timestamp", "username", "action", "entity_name"]].head(10), use_container_width=True)
+
 
 # =====================================================================
-# PAGE: Upload & Review  (Agent: ClauseScout)
+# PAGE: Upload & Review  (Agent: ClauseScout) — with OCR
 # =====================================================================
 def render_upload_review():
     st.markdown('<div class="main-header">🔍 Upload & Review</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["ClauseScout"]["icon"]} ClauseScout Agent</span><div class="agent-desc">{AGENT_PROFILES["ClauseScout"]["description"]}</div></div>', unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload a contract (PDF, DOCX, or TXT)", type=["pdf", "docx", "txt"])
+    if not check_permission(current_user, "analyst"):
+        st.warning("You need **Analyst** or **Admin** role to upload contracts.")
+        return
+
+    st.info("Supports PDF, DOCX, TXT, and **scanned/image PDFs** (via Tesseract OCR). Also accepts PNG, JPG, TIFF images.")
+
+    uploaded_file = st.file_uploader(
+        "Upload a contract",
+        type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "tiff"],
+    )
 
     if uploaded_file:
-        with st.spinner("Extracting text..."):
+        with st.spinner("Extracting text (with OCR fallback for scanned documents)..."):
             try:
-                text = extract_text(uploaded_file)
+                text, used_ocr = _smart_extract(uploaded_file)
                 st.session_state["current_contract_text"] = text
+                uploaded_file.seek(0)
                 save_uploaded_file(uploaded_file, UPLOAD_DIR)
+                log_action(current_user, ACTION_UPLOAD, "contract", entity_name=uploaded_file.name,
+                           details=f"OCR: {used_ocr}, chars: {len(text)}")
             except Exception as e:
                 st.error(f"Error reading file: {e}")
                 return
+
+        if used_ocr:
+            st.markdown('Scanned document detected — extracted via <span class="ocr-badge">OCR / Tesseract</span>', unsafe_allow_html=True)
 
         with st.expander("📄 Extracted Contract Text", expanded=False):
             st.text_area("Contract Text", text, height=300, disabled=True)
@@ -280,6 +362,7 @@ def render_upload_review():
                     try:
                         result = agent.extract_key_elements(text)
                         st.session_state["extraction_result"] = result
+                        log_action(current_user, ACTION_EXTRACT, "contract", entity_name=uploaded_file.name)
                     except Exception as e:
                         st.error(f"Extraction failed: {e}")
                         return
@@ -301,43 +384,42 @@ def render_upload_review():
             st.divider()
             st.subheader("Extracted Key Elements")
 
-            # Summary
             if result.get("summary"):
                 st.markdown(f"**Summary:** {result['summary']}")
 
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.markdown("**📅 Dates**")
+                st.markdown("**Dates**")
                 st.write(f"Effective: {result.get('effective_date', 'N/A')}")
                 st.write(f"Expiration: {result.get('expiration_date', 'N/A')}")
                 st.write(f"Renewal: {result.get('renewal_terms', 'N/A')}")
             with col2:
-                st.markdown("**👥 Parties**")
+                st.markdown("**Parties**")
                 for p in result.get("parties", []):
                     if isinstance(p, dict):
                         st.write(f"- {p.get('name', 'N/A')} ({p.get('role', '')})")
                     else:
                         st.write(f"- {p}")
             with col3:
-                st.markdown("**⚖️ Governing Law**")
+                st.markdown("**Governing Law**")
                 st.write(result.get("governing_law", "N/A"))
                 st.write(f"Jurisdiction: {result.get('jurisdiction', 'N/A')}")
 
-            with st.expander("📋 Obligations"):
+            with st.expander("Obligations"):
                 for o in result.get("obligations", []):
                     if isinstance(o, dict):
                         st.write(f"**{o.get('party', '')}**: {o.get('obligation', '')}")
                     else:
                         st.write(f"- {o}")
 
-            with st.expander("⚠️ Penalties"):
+            with st.expander("Penalties"):
                 for p in result.get("penalties", []):
                     if isinstance(p, dict):
                         st.write(f"**{p.get('type', '')}**: {p.get('description', '')} — {p.get('amount', 'N/A')}")
                     else:
                         st.write(f"- {p}")
 
-            with st.expander("💰 Payment Terms"):
+            with st.expander("Payment Terms"):
                 pt = result.get("payment_terms", {})
                 if isinstance(pt, dict):
                     st.write(f"Amount: {pt.get('amount', 'N/A')}")
@@ -346,7 +428,7 @@ def render_upload_review():
                 else:
                     st.write(pt)
 
-            with st.expander("📄 Other Clauses"):
+            with st.expander("Other Clauses"):
                 for key in ["termination_clauses", "confidentiality_terms", "intellectual_property", "indemnification", "force_majeure"]:
                     val = result.get(key)
                     if val:
@@ -369,7 +451,7 @@ def render_upload_review():
                 tags = st.text_input("Tags (comma-separated)")
                 notes = st.text_area("Notes", height=80)
 
-            if st.button("💾 Save to Repository", type="primary"):
+            if st.button("Save to Repository", type="primary"):
                 metadata = {
                     "filename": uploaded_file.name,
                     "contract_type": contract_type,
@@ -386,15 +468,150 @@ def render_upload_review():
                     "notes": notes,
                 }
                 contract_id = db.save_contract(metadata)
-                st.success(f"Contract saved to repository! ID: `{contract_id}`")
+                log_action(current_user, ACTION_SAVE, "contract", entity_id=contract_id, entity_name=uploaded_file.name)
+                st.success(f"Contract saved! ID: `{contract_id}`")
 
 
 # =====================================================================
-# PAGE: Draft Generation  (Agent: DraftCraft)
+# PAGE: Bulk Upload  (with batch risk scoring)
+# =====================================================================
+def render_bulk_upload():
+    st.markdown('<div class="main-header">📦 Bulk Upload & Batch Processing</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Upload multiple contracts at once with automatic AI extraction and risk scoring</div>', unsafe_allow_html=True)
+
+    if not check_permission(current_user, "analyst"):
+        st.warning("You need **Analyst** or **Admin** role to use bulk upload.")
+        return
+
+    uploaded_files = st.file_uploader(
+        "Upload multiple contracts",
+        type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "tiff"],
+        accept_multiple_files=True,
+    )
+
+    if not uploaded_files:
+        st.info("Drag and drop multiple files or click to browse. Supports PDF, DOCX, TXT, and scanned images.")
+        return
+
+    st.write(f"**{len(uploaded_files)}** file(s) selected")
+
+    # Options
+    col1, col2 = st.columns(2)
+    with col1:
+        auto_extract = st.checkbox("Auto-extract key elements", value=True)
+        auto_risk = st.checkbox("Auto-run risk analysis", value=True)
+    with col2:
+        default_type = st.selectbox("Default contract type", CONTRACT_TYPES)
+        default_status = st.selectbox("Default status", CONTRACT_STATUSES, index=1)
+
+    if st.button("🚀 Process All Files", type="primary", use_container_width=True):
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        results = []
+
+        for i, uploaded_file in enumerate(uploaded_files):
+            progress = (i + 1) / len(uploaded_files)
+            status_text.write(f"Processing **{uploaded_file.name}** ({i+1}/{len(uploaded_files)})...")
+
+            try:
+                # Extract text with OCR fallback
+                text, used_ocr = _smart_extract(uploaded_file)
+                uploaded_file.seek(0)
+                save_uploaded_file(uploaded_file, UPLOAD_DIR)
+
+                result_entry = {
+                    "filename": uploaded_file.name,
+                    "chars": len(text),
+                    "ocr": used_ocr,
+                    "status": "Extracted",
+                    "extraction": None,
+                    "risk_score": None,
+                    "risk_level": None,
+                }
+
+                # Auto-extract
+                extraction = None
+                if auto_extract and st.session_state["api_key"]:
+                    try:
+                        agent = _get_agent("ClauseScout")
+                        extraction = agent.extract_key_elements(text)
+                        result_entry["extraction"] = extraction
+                        result_entry["status"] = "Extracted + Analyzed"
+                    except Exception as e:
+                        result_entry["status"] = f"Extraction error: {e}"
+
+                # Save contract
+                metadata = {
+                    "filename": uploaded_file.name,
+                    "contract_type": default_type,
+                    "status": default_status,
+                    "full_text": text,
+                    "extracted_elements": extraction or {},
+                    "effective_date": extraction.get("effective_date", "") if extraction else "",
+                    "expiration_date": extraction.get("expiration_date", "") if extraction else "",
+                    "parties": extraction.get("parties", []) if extraction else [],
+                    "obligations": extraction.get("obligations", []) if extraction else [],
+                    "penalties": extraction.get("penalties", []) if extraction else [],
+                    "payment_terms": extraction.get("payment_terms", {}) if extraction else {},
+                }
+                contract_id = db.save_contract(metadata)
+
+                # Auto risk analysis
+                if auto_risk and st.session_state["api_key"]:
+                    try:
+                        risk_agent = _get_agent("RiskRadar")
+                        risk_result = risk_agent.analyze_risk(text)
+                        db.save_risk_analysis(contract_id, risk_result)
+                        result_entry["risk_score"] = risk_result.get("overall_risk_score")
+                        result_entry["risk_level"] = risk_result.get("risk_level")
+                        result_entry["status"] = "Complete"
+                    except Exception as e:
+                        result_entry["status"] = f"Risk error: {e}"
+
+                results.append(result_entry)
+
+            except Exception as e:
+                results.append({"filename": uploaded_file.name, "status": f"Failed: {e}", "chars": 0, "ocr": False, "risk_score": None, "risk_level": None})
+
+            progress_bar.progress(progress)
+
+        log_action(current_user, ACTION_BULK_UPLOAD, "contract",
+                   details=f"Processed {len(results)} files")
+
+        status_text.write("**Batch processing complete!**")
+
+        # Results summary
+        st.divider()
+        st.subheader("Processing Results")
+        results_df = pd.DataFrame(results)
+        st.dataframe(results_df, use_container_width=True)
+
+        # Summary stats
+        success = len([r for r in results if "Complete" in r.get("status", "") or "Analyzed" in r.get("status", "")])
+        ocr_count = len([r for r in results if r.get("ocr")])
+        high_risk = len([r for r in results if r.get("risk_score") and r["risk_score"] >= 60])
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.metric("Processed", len(results))
+        with c2:
+            st.metric("Successful", success)
+        with c3:
+            st.metric("OCR Used", ocr_count)
+        with c4:
+            st.metric("High Risk", high_risk, delta_color="inverse")
+
+
+# =====================================================================
+# PAGE: Draft Generation  (Agent: DraftCraft) — with Clause Library
 # =====================================================================
 def render_draft_generation():
     st.markdown('<div class="main-header">✍️ Contract Draft Generation</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["DraftCraft"]["icon"]} DraftCraft Agent</span><div class="agent-desc">{AGENT_PROFILES["DraftCraft"]["description"]}</div></div>', unsafe_allow_html=True)
+
+    if not check_permission(current_user, "analyst"):
+        st.warning("You need **Analyst** or **Admin** role to generate drafts.")
+        return
 
     contract_type = st.selectbox("Select Contract Type", list_templates())
     params = get_template_parameters(contract_type)
@@ -417,7 +634,29 @@ def render_draft_generation():
                 val = st.text_input(param["label"], value=param.get("default", ""), key=f"draft_{param['name']}")
                 form_values[param["name"]] = val
 
-    custom_instructions = st.text_area("Additional Instructions / Special Clauses", height=100, placeholder="E.g., Include a non-solicitation clause, add data protection terms...")
+    # Insert clauses from library
+    st.subheader("Insert Clauses from Library")
+    clauses_df = load_clauses()
+    if not clauses_df.empty:
+        clause_options = clauses_df["title"].tolist()
+        selected_clauses = st.multiselect("Select clauses to include", clause_options)
+        clause_texts = []
+        for title in selected_clauses:
+            row = clauses_df[clauses_df["title"] == title].iloc[0]
+            clause_texts.append(f"**{row['title']}** ({row['category']}):\n{row['clause_text']}")
+            increment_usage(row["id"])
+        if clause_texts:
+            st.info(f"Including {len(clause_texts)} clause(s) from library")
+    else:
+        selected_clauses = []
+        clause_texts = []
+        st.caption("No clauses saved yet. Visit **Clause Library** to create reusable clauses.")
+
+    custom_instructions = st.text_area("Additional Instructions / Special Clauses", height=100, placeholder="E.g., Include a non-solicitation clause...")
+
+    # Append library clauses to instructions
+    if clause_texts:
+        custom_instructions += "\n\nInclude the following pre-approved clauses:\n" + "\n\n".join(clause_texts)
 
     if st.button("✍️ Generate Draft", type="primary", use_container_width=True):
         agent = _get_agent("DraftCraft")
@@ -426,21 +665,20 @@ def render_draft_generation():
                 draft = agent.generate_draft(contract_type, form_values, custom_instructions)
                 st.session_state["draft_result"] = draft
                 st.session_state["draft_history"] = []
+                log_action(current_user, ACTION_GENERATE_DRAFT, "draft", entity_name=contract_type)
             except Exception as e:
                 st.error(f"Draft generation failed: {e}")
                 return
 
-    # Display draft
     if st.session_state["draft_result"]:
         st.divider()
         st.subheader("Generated Contract Draft")
         edited_draft = st.text_area("Edit Draft", st.session_state["draft_result"], height=500)
         st.session_state["draft_result"] = edited_draft
 
-        # Refinement
         st.subheader("Refine Draft")
-        feedback = st.text_area("Describe changes you'd like", height=100, placeholder="E.g., Make the termination clause more favorable to the client...")
-        if st.button("🔄 Refine Draft"):
+        feedback = st.text_area("Describe changes you'd like", height=100, placeholder="E.g., Make the termination clause more favorable...")
+        if st.button("Refine Draft"):
             agent = _get_agent("DraftCraft")
             with st.spinner("DraftCraft is refining..."):
                 try:
@@ -448,22 +686,23 @@ def render_draft_generation():
                     st.session_state["draft_history"].append({"role": "user", "content": feedback})
                     st.session_state["draft_history"].append({"role": "assistant", "content": refined})
                     st.session_state["draft_result"] = refined
+                    log_action(current_user, ACTION_REFINE_DRAFT, "draft", entity_name=contract_type)
                     st.rerun()
                 except Exception as e:
                     st.error(f"Refinement failed: {e}")
 
-        # Export
         st.divider()
         exp_col1, exp_col2, exp_col3 = st.columns(3)
         with exp_col1:
             pdf_bytes = export_contract_pdf(edited_draft, {"contract_type": contract_type, "status": "Draft"})
-            st.download_button("📥 Download PDF", pdf_bytes, "contract_draft.pdf", "application/pdf")
+            st.download_button("Download PDF", pdf_bytes, "contract_draft.pdf", "application/pdf")
         with exp_col2:
             docx_bytes = export_contract_docx(edited_draft, {"contract_type": contract_type, "status": "Draft"})
-            st.download_button("📥 Download DOCX", docx_bytes, "contract_draft.docx")
+            st.download_button("Download DOCX", docx_bytes, "contract_draft.docx")
         with exp_col3:
-            if st.button("💾 Save Draft to Repository"):
+            if st.button("Save Draft to Repository"):
                 db.save_draft(contract_type, form_values, edited_draft)
+                log_action(current_user, ACTION_EXPORT, "draft", entity_name=contract_type)
                 st.success("Draft saved!")
 
 
@@ -474,17 +713,21 @@ def render_risk_analysis():
     st.markdown('<div class="main-header">🛡️ Risk Analysis</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["RiskRadar"]["icon"]} RiskRadar Agent</span><div class="agent-desc">{AGENT_PROFILES["RiskRadar"]["description"]}</div></div>', unsafe_allow_html=True)
 
-    # Source selection
     source = st.radio("Select contract source:", ["Upload New", "From Repository"], horizontal=True)
 
     contract_text = ""
     contract_id = None
+    contract_name = ""
 
     if source == "Upload New":
-        uploaded = st.file_uploader("Upload contract", type=["pdf", "docx", "txt"], key="risk_upload")
+        uploaded = st.file_uploader("Upload contract", type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "tiff"], key="risk_upload")
         if uploaded:
             try:
-                contract_text = extract_text(uploaded)
+                text, used_ocr = _smart_extract(uploaded)
+                contract_text = text
+                contract_name = uploaded.name
+                if used_ocr:
+                    st.markdown('<span class="ocr-badge">OCR Used</span>', unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"Error: {e}")
     else:
@@ -497,11 +740,12 @@ def render_risk_analysis():
         idx = options.index(selected)
         contract_id = contracts_df.iloc[idx]["id"]
         contract_text = contracts_df.iloc[idx]["full_text"]
+        contract_name = selected
 
     if contract_text:
         st.info(f"Contract loaded: {len(contract_text):,} characters")
 
-        if st.button("🛡️ Analyze Risk", type="primary", use_container_width=True):
+        if st.button("Analyze Risk", type="primary", use_container_width=True):
             agent = _get_agent("RiskRadar")
             with st.spinner("RiskRadar is analyzing risks..."):
                 try:
@@ -509,6 +753,14 @@ def render_risk_analysis():
                     st.session_state["risk_result"] = result
                     if contract_id:
                         db.save_risk_analysis(contract_id, result)
+                    log_action(current_user, ACTION_RISK_ANALYSIS, "contract",
+                               entity_id=contract_id or "", entity_name=contract_name)
+
+                    # Auto send risk alert if high risk
+                    score = result.get("overall_risk_score", 0)
+                    if score >= 60:
+                        top_risks = [c.get("risk_type", "") for c in result.get("risky_clauses", [])[:5]]
+                        st.warning(f"High risk detected (score: {score}). Configure **Email Alerts** to notify stakeholders.")
                 except Exception as e:
                     st.error(f"Risk analysis failed: {e}")
                     return
@@ -517,7 +769,6 @@ def render_risk_analysis():
     if result:
         st.divider()
 
-        # Risk score gauge and level
         col1, col2 = st.columns([1, 2])
         with col1:
             score = result.get("overall_risk_score", 0)
@@ -528,8 +779,7 @@ def render_risk_analysis():
             st.markdown(f'### Risk Level: <span class="{css_class}">{level}</span>', unsafe_allow_html=True)
             st.markdown(f"**Executive Summary:** {result.get('executive_summary', 'N/A')}")
 
-        # Risky clauses
-        st.subheader("⚠️ Risky Clauses")
+        st.subheader("Risky Clauses")
         for clause in result.get("risky_clauses", []):
             severity = clause.get("severity", "Medium")
             color = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🟢"}.get(severity, "⚪")
@@ -538,41 +788,48 @@ def render_risk_analysis():
                 st.write(f"**Explanation:** {clause.get('explanation', 'N/A')}")
                 st.info(f"**Recommendation:** {clause.get('recommendation', 'N/A')}")
 
-        # Missing protections
+                # Save clause to library
+                if st.button(f"Save recommendation to Clause Library", key=f"save_clause_{clause.get('risk_type', '')}"):
+                    save_clause(
+                        title=f"Recommended: {clause.get('risk_type', 'Clause')}",
+                        category=clause.get("risk_type", "Other"),
+                        clause_text=clause.get("recommendation", ""),
+                        tags="risk-recommendation,auto-generated",
+                        created_by=current_user,
+                    )
+                    log_action(current_user, ACTION_CLAUSE_SAVE, "clause", entity_name=clause.get("risk_type", ""))
+                    st.success("Saved to Clause Library!")
+
         missing = result.get("missing_protections", [])
         if missing:
-            st.subheader("🚫 Missing Protections")
+            st.subheader("Missing Protections")
             for m in missing:
                 importance = m.get("importance", "Medium")
                 color = {"Critical": "🔴", "High": "🟠", "Medium": "🟡"}.get(importance, "⚪")
                 st.write(f"{color} **{m.get('protection', '')}** ({importance}) — {m.get('recommendation', '')}")
 
-        # Compliance issues
         compliance = result.get("compliance_issues", [])
         if compliance:
-            st.subheader("📋 Compliance Issues")
+            st.subheader("Compliance Issues")
             for c in compliance:
                 st.write(f"🔴 **{c.get('regulation', '')}**: {c.get('issue', '')} — Severity: {c.get('severity', 'N/A')}")
 
-        # Favorable clauses
         favorable = result.get("favorable_clauses", [])
         if favorable:
-            st.subheader("✅ Favorable Clauses")
+            st.subheader("Favorable Clauses")
             for f in favorable:
                 st.write(f"🟢 **{f.get('clause', '')}** — {f.get('benefit', '')}")
 
-        # Negotiation points
         negotiations = result.get("negotiation_points", [])
         if negotiations:
-            st.subheader("💬 Negotiation Recommendations")
+            st.subheader("Negotiation Recommendations")
             for n in negotiations:
                 priority = n.get("priority", "Medium")
                 st.write(f"**[{priority}]** {n.get('point', '')} → _{n.get('suggested_change', '')}_")
 
-        # Export
         st.divider()
         pdf_bytes = export_risk_report_pdf(result)
-        st.download_button("📥 Download Risk Report (PDF)", pdf_bytes, "risk_report.pdf", "application/pdf")
+        st.download_button("Download Risk Report (PDF)", pdf_bytes, "risk_report.pdf", "application/pdf")
 
 
 # =====================================================================
@@ -590,9 +847,9 @@ def render_comparison():
         st.subheader("Contract A")
         source_a = st.radio("Source", ["Upload", "Repository"], key="comp_source_a", horizontal=True)
         if source_a == "Upload":
-            file_a = st.file_uploader("Upload Contract A", type=["pdf", "docx", "txt"], key="comp_a")
+            file_a = st.file_uploader("Upload Contract A", type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "tiff"], key="comp_a")
             if file_a:
-                text_a = extract_text(file_a)
+                text_a, _ = _smart_extract(file_a)
                 label_a = file_a.name
         else:
             df = db.load_contracts()
@@ -606,9 +863,9 @@ def render_comparison():
         st.subheader("Contract B")
         source_b = st.radio("Source", ["Upload", "Repository"], key="comp_source_b", horizontal=True)
         if source_b == "Upload":
-            file_b = st.file_uploader("Upload Contract B", type=["pdf", "docx", "txt"], key="comp_b")
+            file_b = st.file_uploader("Upload Contract B", type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "tiff"], key="comp_b")
             if file_b:
-                text_b = extract_text(file_b)
+                text_b, _ = _smart_extract(file_b)
                 label_b = file_b.name
         else:
             df = db.load_contracts()
@@ -619,12 +876,14 @@ def render_comparison():
                 label_b = sel
 
     if text_a and text_b:
-        if st.button("⚖️ Compare Contracts", type="primary", use_container_width=True):
+        if st.button("Compare Contracts", type="primary", use_container_width=True):
             agent = _get_agent("DiffLens")
             with st.spinner("DiffLens is comparing contracts..."):
                 try:
                     result = agent.compare_contracts(text_a, text_b, label_a, label_b)
                     st.session_state["comparison_result"] = result
+                    log_action(current_user, ACTION_COMPARE, "contract",
+                               entity_name=f"{label_a} vs {label_b}")
                 except Exception as e:
                     st.error(f"Comparison failed: {e}")
                     return
@@ -633,17 +892,14 @@ def render_comparison():
     if result:
         st.divider()
 
-        # Summary
         st.subheader("Executive Summary")
         st.markdown(result.get("summary", "N/A"))
 
-        # Risk comparison
         risk_comp = result.get("risk_comparison", {})
         if risk_comp:
             favorable = risk_comp.get("more_favorable", "Equal")
             st.info(f"**More favorable:** {favorable} — {risk_comp.get('explanation', '')}")
 
-        # Key differences
         diffs = result.get("key_differences", [])
         if diffs:
             st.subheader("Key Differences")
@@ -658,7 +914,6 @@ def render_comparison():
                         st.write(d.get("contract_b", "N/A"))
                     st.write(f"**Significance:** {d.get('significance', '')}")
 
-        # Added / Removed / Modified
         for section, icon, label in [
             ("added_clauses", "🟢", "Added Clauses (in B, not in A)"),
             ("removed_clauses", "🔴", "Removed Clauses (in A, not in B)"),
@@ -681,10 +936,9 @@ def render_repository():
     st.markdown('<div class="main-header">📁 Contract Repository</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Search, filter, and manage all your contracts</div>', unsafe_allow_html=True)
 
-    # Search and filter
     col1, col2, col3 = st.columns([3, 1, 1])
     with col1:
-        search_query = st.text_input("🔎 Search contracts", placeholder="Search by filename, type, or tags...")
+        search_query = st.text_input("Search contracts", placeholder="Search by filename, type, or tags...")
     with col2:
         filter_type = st.selectbox("Type", ["All"] + CONTRACT_TYPES)
     with col3:
@@ -706,11 +960,9 @@ def render_repository():
         st.info("No contracts match your filters. Upload contracts via **Upload & Review**.")
         return
 
-    # Export all
     excel_bytes = export_contracts_excel(contracts_df)
-    st.download_button("📥 Export to Excel", excel_bytes, "contracts_export.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    st.download_button("Export to Excel", excel_bytes, "contracts_export.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-    # Display contracts
     for _, row in contracts_df.iterrows():
         with st.expander(f"📄 {row['filename']} — {row.get('contract_type', 'N/A')} | {row.get('status', 'N/A')} | Risk: {row.get('risk_score', 'N/A')}"):
             c1, c2 = st.columns(2)
@@ -726,7 +978,6 @@ def render_repository():
                 st.write(f"**Tags:** {row.get('tags', 'N/A')}")
                 st.write(f"**Notes:** {row.get('notes', 'N/A')}")
 
-            # Extracted elements
             elements = row.get("extracted_elements", "{}")
             if elements and elements != "{}":
                 try:
@@ -736,16 +987,242 @@ def render_repository():
                 except (json.JSONDecodeError, TypeError):
                     pass
 
-            # View full text
+            # Audit history for this contract
+            contract_history = get_contract_history(row["id"])
+            if not contract_history.empty:
+                with st.expander("View Activity History"):
+                    st.dataframe(contract_history[["timestamp", "username", "action", "details"]], use_container_width=True)
+
             if row.get("full_text"):
                 with st.expander("View Full Text"):
                     st.text_area("Text", row["full_text"], height=200, disabled=True, key=f"text_{row['id']}")
 
-            # Delete
-            if st.button(f"🗑️ Delete", key=f"del_{row['id']}"):
-                db.delete_contract(row["id"])
-                st.success("Contract deleted!")
-                st.rerun()
+            if check_permission(current_user, "analyst"):
+                if st.button(f"Delete", key=f"del_{row['id']}"):
+                    db.delete_contract(row["id"])
+                    log_action(current_user, ACTION_DELETE, "contract", entity_id=row["id"], entity_name=row["filename"])
+                    st.success("Contract deleted!")
+                    st.rerun()
+
+
+# =====================================================================
+# PAGE: Clause Library
+# =====================================================================
+def render_clause_library():
+    st.markdown('<div class="main-header">📚 Clause Library</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Save, search, and reuse your favorite contract clauses across drafts</div>', unsafe_allow_html=True)
+
+    tab1, tab2, tab3 = st.tabs(["Browse & Search", "Add New Clause", "Popular Clauses"])
+
+    with tab1:
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            search_q = st.text_input("Search clauses", placeholder="Search by title, text, or tags...")
+        with col2:
+            cat_filter = st.selectbox("Category", ["All"] + CLAUSE_CATEGORIES)
+
+        if cat_filter == "All":
+            cat_filter = ""
+        clauses_df = search_clauses(search_q, cat_filter)
+
+        st.write(f"**{len(clauses_df)}** clause(s) found")
+
+        for _, row in clauses_df.iterrows():
+            with st.expander(f"📋 {row['title']} — {row['category']} (used {row['usage_count']}x)"):
+                st.markdown(f"**Category:** {row['category']}")
+                st.markdown(f"**Tags:** {row.get('tags', 'N/A')}")
+                st.text_area("Clause Text", row["clause_text"], height=150, disabled=True, key=f"clause_{row['id']}")
+                if row.get("notes"):
+                    st.caption(f"Notes: {row['notes']}")
+                st.caption(f"Created by: {row.get('created_by', 'N/A')} | Created: {row['created_at']}")
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("📋 Copy to clipboard", key=f"copy_{row['id']}"):
+                        st.code(row["clause_text"])
+                        increment_usage(row["id"])
+                with col2:
+                    if check_permission(current_user, "analyst"):
+                        if st.button("Delete", key=f"del_clause_{row['id']}"):
+                            delete_clause(row["id"])
+                            log_action(current_user, ACTION_CLAUSE_DELETE, "clause", entity_id=row["id"], entity_name=row["title"])
+                            st.success("Clause deleted!")
+                            st.rerun()
+
+    with tab2:
+        if not check_permission(current_user, "analyst"):
+            st.warning("You need **Analyst** or **Admin** role to add clauses.")
+        else:
+            with st.form("add_clause_form"):
+                title = st.text_input("Clause Title*", placeholder="e.g., Standard Force Majeure Clause")
+                category = st.selectbox("Category*", CLAUSE_CATEGORIES)
+                clause_text = st.text_area("Clause Text*", height=200, placeholder="Paste or type the clause text here...")
+                col1, col2 = st.columns(2)
+                with col1:
+                    tags = st.text_input("Tags (comma-separated)", placeholder="e.g., force-majeure, standard, protective")
+                    contract_type = st.selectbox("Applicable Contract Type", ["Any"] + CONTRACT_TYPES)
+                with col2:
+                    notes = st.text_area("Notes", height=100, placeholder="When to use this clause, context, etc.")
+
+                submitted = st.form_submit_button("Save Clause", type="primary")
+                if submitted:
+                    if title and clause_text:
+                        clause_id = save_clause(
+                            title=title,
+                            category=category,
+                            clause_text=clause_text,
+                            tags=tags,
+                            contract_type=contract_type if contract_type != "Any" else "",
+                            notes=notes,
+                            created_by=current_user,
+                        )
+                        log_action(current_user, ACTION_CLAUSE_SAVE, "clause", entity_id=clause_id, entity_name=title)
+                        st.success(f"Clause saved! ID: `{clause_id}`")
+                    else:
+                        st.error("Title and clause text are required.")
+
+    with tab3:
+        popular = get_popular_clauses(10)
+        if popular.empty:
+            st.info("No clauses yet. Add your first clause in the **Add New Clause** tab.")
+        else:
+            st.subheader("Top 10 Most Used Clauses")
+            for _, row in popular.iterrows():
+                st.markdown(f"**{row['title']}** ({row['category']}) — used **{row['usage_count']}** times")
+                with st.expander("View"):
+                    st.text(row["clause_text"])
+
+
+# =====================================================================
+# PAGE: Email Alerts
+# =====================================================================
+def render_email_alerts():
+    st.markdown('<div class="main-header">📧 Email Alerts</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Configure and send email notifications for expiring contracts and high-risk alerts</div>', unsafe_allow_html=True)
+
+    if not check_permission(current_user, "analyst"):
+        st.warning("You need **Analyst** or **Admin** role to manage email alerts.")
+        return
+
+    # Email settings
+    st.subheader("Email Configuration")
+    st.caption("Set via environment variables or `.streamlit/secrets.toml` for persistent config.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        smtp_server = st.text_input("SMTP Server", value="smtp.gmail.com")
+        smtp_port = st.number_input("SMTP Port", value=587, min_value=1)
+        smtp_username = st.text_input("SMTP Username / Email")
+    with col2:
+        smtp_password = st.text_input("SMTP Password", type="password")
+        from_email = st.text_input("From Email", value=smtp_username)
+        recipient_email = st.text_input("Send alerts to (recipient email)")
+
+    st.divider()
+
+    # Expiring contracts preview
+    st.subheader("Expiring Contracts")
+    contracts_df = db.load_contracts()
+    days_ahead = st.slider("Alert window (days)", min_value=7, max_value=90, value=30)
+    expiring = get_expiring_contracts(contracts_df, days_ahead)
+
+    if expiring.empty:
+        st.success(f"No contracts expiring within {days_ahead} days.")
+    else:
+        st.warning(f"**{len(expiring)}** contract(s) expiring within {days_ahead} days:")
+        display_cols = ["filename", "contract_type", "expiration_date", "risk_score"]
+        available = [c for c in display_cols if c in expiring.columns]
+        st.dataframe(expiring[available], use_container_width=True)
+
+        if recipient_email and st.button("Send Expiry Alert Email", type="primary"):
+            # Temporarily override env vars for this send
+            import utils.email_alerts as ea
+            ea.SMTP_SERVER = smtp_server
+            ea.SMTP_PORT = int(smtp_port)
+            ea.SMTP_USERNAME = smtp_username
+            ea.SMTP_PASSWORD = smtp_password
+            ea.ALERT_FROM_EMAIL = from_email
+
+            result = send_expiry_alerts(contracts_df, recipient_email, days_ahead)
+            if result["sent"]:
+                log_action(current_user, ACTION_EMAIL_ALERT, "email",
+                           details=f"Expiry alert to {recipient_email}, {result['count']} contracts")
+                st.success(f"Alert sent to **{recipient_email}** for {result['count']} contract(s)!")
+            else:
+                st.error(f"Failed to send: {result.get('reason', 'Check SMTP credentials')}")
+
+    # Email preview
+    st.divider()
+    st.subheader("Email Preview")
+    if not expiring.empty:
+        from utils.email_alerts import build_expiry_alert_html
+        html = build_expiry_alert_html(expiring, days_ahead)
+        st.components.v1.html(html, height=500, scrolling=True)
+
+
+# =====================================================================
+# PAGE: Audit Trail
+# =====================================================================
+def render_audit_trail():
+    st.markdown('<div class="main-header">📋 Audit Trail</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Track all user actions across the contract management system</div>', unsafe_allow_html=True)
+
+    tab1, tab2, tab3 = st.tabs(["Activity Log", "User Activity", "Contract History"])
+
+    with tab1:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            filter_user = st.text_input("Filter by username", placeholder="All users")
+        with col2:
+            filter_action = st.selectbox("Filter by action", [
+                "All", ACTION_UPLOAD, ACTION_EXTRACT, ACTION_SAVE, ACTION_DELETE,
+                ACTION_GENERATE_DRAFT, ACTION_REFINE_DRAFT, ACTION_RISK_ANALYSIS,
+                ACTION_COMPARE, ACTION_EXPORT, ACTION_BULK_UPLOAD, ACTION_EMAIL_ALERT,
+                ACTION_LOGIN, ACTION_LOGOUT, ACTION_CLAUSE_SAVE, ACTION_CLAUSE_DELETE,
+            ])
+        with col3:
+            limit = st.number_input("Max entries", min_value=10, max_value=1000, value=100)
+
+        audit_df = get_audit_log(
+            limit=limit,
+            username=filter_user if filter_user else None,
+            action=filter_action if filter_action != "All" else None,
+        )
+
+        if audit_df.empty:
+            st.info("No audit entries yet.")
+        else:
+            st.write(f"**{len(audit_df)}** entries found")
+            st.dataframe(
+                audit_df[["timestamp", "username", "action", "entity_type", "entity_name", "details"]],
+                use_container_width=True,
+            )
+
+            # Export
+            excel_bytes = export_contracts_excel(audit_df)
+            st.download_button("Export Audit Log (Excel)", excel_bytes, "audit_log.xlsx")
+
+    with tab2:
+        summary = get_user_activity_summary()
+        if summary.empty:
+            st.info("No user activity yet.")
+        else:
+            st.subheader("Activity by User")
+            st.dataframe(summary, use_container_width=True)
+
+    with tab3:
+        contracts_df = db.load_contracts()
+        if contracts_df.empty:
+            st.info("No contracts in repository.")
+        else:
+            selected = st.selectbox("Select contract", contracts_df["filename"].tolist())
+            idx = contracts_df["filename"].tolist().index(selected)
+            cid = contracts_df.iloc[idx]["id"]
+            history = get_contract_history(cid)
+            if history.empty:
+                st.info("No activity recorded for this contract.")
+            else:
+                st.dataframe(history[["timestamp", "username", "action", "details"]], use_container_width=True)
 
 
 # =====================================================================
@@ -766,12 +1243,46 @@ def render_agents():
     st.divider()
     st.subheader("How It Works")
     st.markdown("""
-    1. **ClauseScout** scans uploaded contracts and extracts every key element — parties, dates, obligations, penalties, and more.
-    2. **DraftCraft** generates professionally structured contract drafts from templates with AI-powered customization and iterative refinement.
-    3. **RiskRadar** performs deep risk analysis, scoring contracts on a 0-100 scale and identifying risky clauses, compliance gaps, and missing protections.
-    4. **DiffLens** compares two contracts side-by-side, highlighting every meaningful difference and recommending which terms are more favorable.
+    1. **ClauseScout** scans uploaded contracts (including scanned PDFs via OCR) and extracts every key element.
+    2. **DraftCraft** generates contracts from templates, enhanced with clauses from the **Clause Library**.
+    3. **RiskRadar** performs deep risk analysis with automatic **email alerts** for high-risk contracts.
+    4. **DiffLens** compares two contracts side-by-side with AI-powered difference analysis.
 
-    All agents are powered by **OpenAI GPT-4o** for maximum accuracy and legal reasoning capability, running on the **Infosys Cobalt** cloud platform.
+    All actions are tracked in the **Audit Trail**. **Bulk Upload** processes multiple files with batch risk scoring.
+
+    Powered by **OpenAI GPT-4o** on the **Infosys Cobalt** cloud platform.
+    """)
+
+
+# =====================================================================
+# PAGE: User Management (Admin only)
+# =====================================================================
+def render_user_management_page():
+    st.markdown('<div class="main-header">👥 User Management</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Manage users, roles, and access permissions</div>', unsafe_allow_html=True)
+
+    if not check_permission(current_user, "admin"):
+        st.error("Admin access required.")
+        return
+
+    render_user_management()
+
+    st.divider()
+    st.subheader("Role Permissions")
+    st.markdown("""
+    | Permission | Viewer | Analyst | Admin |
+    |---|---|---|---|
+    | View Dashboard | ✅ | ✅ | ✅ |
+    | View Repository | ✅ | ✅ | ✅ |
+    | View Audit Trail | ✅ | ✅ | ✅ |
+    | Upload Contracts | ❌ | ✅ | ✅ |
+    | Generate Drafts | ❌ | ✅ | ✅ |
+    | Risk Analysis | ✅ | ✅ | ✅ |
+    | Bulk Upload | ❌ | ✅ | ✅ |
+    | Clause Library (edit) | ❌ | ✅ | ✅ |
+    | Email Alerts | ❌ | ✅ | ✅ |
+    | Delete Contracts | ❌ | ✅ | ✅ |
+    | User Management | ❌ | ❌ | ✅ |
     """)
 
 
@@ -782,6 +1293,8 @@ if page == "🏠 Dashboard":
     render_dashboard()
 elif page == "🔍 Upload & Review":
     render_upload_review()
+elif page == "📦 Bulk Upload":
+    render_bulk_upload()
 elif page == "✍️ Draft Generation":
     render_draft_generation()
 elif page == "🛡️ Risk Analysis":
@@ -790,5 +1303,13 @@ elif page == "⚖️ Contract Comparison":
     render_comparison()
 elif page == "📁 Contract Repository":
     render_repository()
+elif page == "📚 Clause Library":
+    render_clause_library()
+elif page == "📧 Email Alerts":
+    render_email_alerts()
+elif page == "📋 Audit Trail":
+    render_audit_trail()
 elif page == "🤖 AI Agents":
     render_agents()
+elif page == "👥 User Management":
+    render_user_management_page()
