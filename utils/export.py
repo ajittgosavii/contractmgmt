@@ -4,6 +4,23 @@ import io
 from datetime import datetime
 
 
+def _safe_text(text: str) -> str:
+    """Sanitize text for fpdf2 — replace characters that can't be rendered in Helvetica."""
+    if not text:
+        return ""
+    # Replace common problematic characters
+    replacements = {
+        "\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+        "\u2013": "-", "\u2014": "--", "\u2026": "...", "\u00a0": " ",
+        "\u2022": "*", "\u2023": ">", "\u25cf": "*", "\u25cb": "o",
+        "\u2010": "-", "\u2011": "-", "\u2012": "-",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    # Remove any remaining non-latin1 characters
+    return text.encode("latin-1", errors="replace").decode("latin-1")
+
+
 def export_contract_pdf(contract_text: str, metadata: dict = None) -> bytes:
     from fpdf import FPDF
 
@@ -13,7 +30,7 @@ def export_contract_pdf(contract_text: str, metadata: dict = None) -> bytes:
 
     pdf.set_font("Helvetica", "B", 16)
     title = metadata.get("contract_type", "Contract") if metadata else "Contract"
-    pdf.cell(0, 10, title, ln=True, align="C")
+    pdf.cell(0, 10, _safe_text(title), ln=True, align="C")
     pdf.ln(5)
 
     if metadata:
@@ -24,7 +41,7 @@ def export_contract_pdf(contract_text: str, metadata: dict = None) -> bytes:
 
     pdf.set_font("Helvetica", "", 11)
     for line in contract_text.split("\n"):
-        pdf.multi_cell(0, 6, line)
+        pdf.multi_cell(0, 6, _safe_text(line))
 
     return pdf.output()
 
@@ -67,23 +84,61 @@ def export_risk_report_pdf(analysis: dict) -> bytes:
 
     pdf.set_font("Helvetica", "B", 13)
     pdf.cell(0, 8, "Executive Summary", ln=True)
-    pdf.set_font("Helvetica", "", 11)
-    pdf.multi_cell(0, 6, analysis.get("executive_summary", "N/A"))
+    pdf.set_font("Helvetica", "", 10)
+    summary = _safe_text(analysis.get("executive_summary", "N/A"))
+    if summary:
+        pdf.multi_cell(0, 6, summary)
     pdf.ln(5)
 
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.cell(0, 8, "Risky Clauses", ln=True)
+    pdf.ln(2)
+
     for clause in analysis.get("risky_clauses", []):
-        pdf.set_font("Helvetica", "B", 11)
-        pdf.cell(0, 6, f"[{clause.get('severity', 'N/A')}] {clause.get('risk_type', 'Risk')}", ln=True)
-        pdf.set_font("Helvetica", "", 10)
-        pdf.multi_cell(0, 5, clause.get("explanation", ""))
-        pdf.multi_cell(0, 5, f"Recommendation: {clause.get('recommendation', '')}")
+        severity = _safe_text(clause.get("severity", "N/A"))
+        risk_type = _safe_text(clause.get("risk_type", "Risk"))
+        explanation = _safe_text(clause.get("explanation", ""))
+        recommendation = _safe_text(clause.get("recommendation", ""))
+
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(0, 6, f"[{severity}] {risk_type}", ln=True)
+
+        if explanation:
+            pdf.set_font("Helvetica", "", 9)
+            pdf.multi_cell(0, 5, explanation)
+
+        if recommendation:
+            pdf.set_font("Helvetica", "I", 9)
+            pdf.multi_cell(0, 5, f"Recommendation: {recommendation}")
+
+        pdf.ln(3)
+
+    # Missing protections
+    missing = analysis.get("missing_protections", [])
+    if missing:
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.cell(0, 8, "Missing Protections", ln=True)
+        pdf.set_font("Helvetica", "", 9)
+        for m in missing:
+            text = _safe_text(f"- {m.get('protection', '')}: {m.get('recommendation', '')}")
+            pdf.multi_cell(0, 5, text)
+        pdf.ln(3)
+
+    # Negotiation points
+    negotiations = analysis.get("negotiation_points", [])
+    if negotiations:
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.cell(0, 8, "Negotiation Points", ln=True)
+        pdf.set_font("Helvetica", "", 9)
+        for n in negotiations:
+            text = _safe_text(f"[{n.get('priority', '')}] {n.get('point', '')} - {n.get('suggested_change', '')}")
+            pdf.multi_cell(0, 5, text)
         pdf.ln(3)
 
     return pdf.output()
 
 
 def export_contracts_excel(df) -> bytes:
-    buffer = io.BytesIO()
     with io.BytesIO() as buf:
         df.to_excel(buf, index=False, engine="openpyxl")
         return buf.getvalue()
