@@ -1,0 +1,40 @@
+EMPLOYMENT AGREEMENT
+
+This Employment Agreement ("Agreement") is made effective as of {start_date},
+
+by and between:
+
+{employer_name} ("Employer")
+and
+{employee_name} ("Employee")
+
+1. POSITION AND DUTIES
+The Employer hereby employs the Employee as {position}. The Employee shall perform duties as reasonably assigned.
+
+2. COMPENSATION
+Annual Salary: {salary}, payable in accordance with Employer's standard payroll schedule.
+
+3. BENEFITS
+{benefits}
+
+4. TERM
+Employment shall commence on {start_date} and continue on an at-will basis unless otherwise specified.
+
+5. CONFIDENTIALITY
+The Employee agrees to maintain the confidentiality of all proprietary information during and after employment.
+
+6. NON-COMPETE
+For a period of 12 months following termination, the Employee shall not engage in competing activities within the same geographic market.
+
+7. INTELLECTUAL PROPERTY
+All work product created during employment shall be the sole property of the Employer.
+
+8. TERMINATION
+Either Party may terminate with 30 days written notice. The Employer may terminate immediately for cause.
+
+9. GOVERNING LAW
+This Agreement shall be governed by the laws of {governing_law}.
+
+________________________          ________________________
+{employer_name}                   {employee_name}
+Date: _______________             Date: _______________

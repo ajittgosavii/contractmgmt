@@ -1,0 +1,52 @@
+MASTER SERVICE AGREEMENT
+
+This Master Service Agreement ("Agreement") is made effective as of {effective_date},
+
+by and between:
+
+{client_name} ("Client")
+and
+{provider_name} ("Service Provider")
+
+1. SERVICES
+The Service Provider shall provide the services as described in individual Statements of Work ("SOW") executed under this Agreement.
+{services_description}
+
+2. TERM
+This Agreement shall commence on the Effective Date and continue for {term_years} years unless earlier terminated.
+
+3. PAYMENT TERMS
+(a) Fees shall be as specified in each SOW.
+(b) Payment terms: {payment_terms} from invoice date.
+(c) Late payments shall accrue interest at 1.5% per month.
+
+4. INTELLECTUAL PROPERTY
+All pre-existing IP remains with the respective Party. Work product created under this Agreement shall be owned by the Client upon full payment.
+
+5. CONFIDENTIALITY
+Each Party agrees to maintain the confidentiality of the other Party's proprietary information.
+
+6. WARRANTIES
+The Service Provider warrants that services will be performed in a professional and workmanlike manner.
+
+7. LIMITATION OF LIABILITY
+Neither Party shall be liable for indirect, incidental, or consequential damages. Total liability shall not exceed fees paid in the 12 months preceding the claim.
+
+8. INDEMNIFICATION
+Each Party shall indemnify the other against third-party claims arising from its breach of this Agreement or negligence.
+
+9. TERMINATION
+Either Party may terminate with 30 days written notice. Termination does not affect obligations under active SOWs.
+
+10. FORCE MAJEURE
+Neither Party shall be liable for delays caused by events beyond reasonable control.
+
+11. GOVERNING LAW
+This Agreement shall be governed by the laws of {governing_law}.
+
+12. ENTIRE AGREEMENT
+This Agreement, together with all SOWs, constitutes the entire agreement between the Parties.
+
+________________________          ________________________
+{client_name}                     {provider_name}
+Date: _______________             Date: _______________

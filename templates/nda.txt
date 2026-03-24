@@ -1,0 +1,56 @@
+NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement ("Agreement") is entered into as of {effective_date} ("Effective Date"),
+
+by and between:
+
+{disclosing_party} ("Disclosing Party")
+and
+{receiving_party} ("Receiving Party")
+
+(collectively referred to as the "Parties").
+
+RECITALS
+
+WHEREAS, the Disclosing Party possesses certain confidential and proprietary information; and
+WHEREAS, the Receiving Party desires to receive certain confidential information for the purpose of {scope};
+
+NOW, THEREFORE, in consideration of the mutual covenants contained herein, the Parties agree as follows:
+
+1. DEFINITION OF CONFIDENTIAL INFORMATION
+"Confidential Information" means any and all non-public information, including but not limited to trade secrets, technical data, business plans, financial information, customer lists, and any other proprietary information disclosed by the Disclosing Party.
+
+2. OBLIGATIONS OF RECEIVING PARTY
+The Receiving Party shall:
+(a) Hold all Confidential Information in strict confidence;
+(b) Not disclose Confidential Information to any third party without prior written consent;
+(c) Use Confidential Information solely for the agreed purpose;
+(d) Take reasonable measures to protect the confidentiality of such information.
+
+3. EXCLUSIONS
+This Agreement does not apply to information that:
+(a) Is or becomes publicly available through no fault of the Receiving Party;
+(b) Was known to the Receiving Party prior to disclosure;
+(c) Is independently developed without use of Confidential Information;
+(d) Is required to be disclosed by law or court order.
+
+4. TERM
+This Agreement shall remain in effect for a period of {duration_years} years from the Effective Date.
+
+5. RETURN OF MATERIALS
+Upon termination or request, the Receiving Party shall return or destroy all Confidential Information.
+
+6. REMEDIES
+The Parties acknowledge that breach may cause irreparable harm, and the Disclosing Party shall be entitled to seek injunctive relief.
+
+7. GOVERNING LAW
+This Agreement shall be governed by the laws of {governing_law}.
+
+8. ENTIRE AGREEMENT
+This Agreement constitutes the entire agreement between the Parties regarding the subject matter herein.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first written above.
+
+________________________          ________________________
+{disclosing_party}                {receiving_party}
+Date: _______________             Date: _______________

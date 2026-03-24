@@ -1,0 +1,43 @@
+LEASE AGREEMENT
+
+This Lease Agreement ("Lease") is made effective as of {lease_start},
+
+by and between:
+
+{landlord_name} ("Landlord")
+and
+{tenant_name} ("Tenant")
+
+1. PREMISES
+The Landlord hereby leases to the Tenant the property located at:
+{property_address}
+
+2. TERM
+Lease Start Date: {lease_start}
+Lease End Date: {lease_end}
+
+3. RENT
+Monthly Rent: {monthly_rent}, due on the 1st of each month.
+Late Fee: 5% of monthly rent if paid after the 5th of the month.
+
+4. SECURITY DEPOSIT
+Security Deposit: {security_deposit}, to be returned within 30 days of lease termination, less any deductions for damages.
+
+5. USE OF PREMISES
+The Premises shall be used solely for lawful purposes consistent with the intended use.
+
+6. MAINTENANCE AND REPAIRS
+Landlord shall maintain structural elements. Tenant shall maintain the interior in good condition.
+
+7. INSURANCE
+Tenant shall maintain renter's insurance throughout the lease term.
+
+8. TERMINATION
+Early termination requires 60 days written notice and payment of an early termination fee equal to 2 months' rent.
+
+9. GOVERNING LAW
+This Lease shall be governed by the laws of {governing_law}.
+
+________________________          ________________________
+{landlord_name}                   {tenant_name}
+Date: _______________             Date: _______________

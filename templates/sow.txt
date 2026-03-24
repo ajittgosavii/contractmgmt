@@ -1,0 +1,39 @@
+STATEMENT OF WORK
+
+This Statement of Work ("SOW") is entered into as of {start_date},
+
+pursuant to the Master Service Agreement between:
+
+{client_name} ("Client") and {provider_name} ("Provider")
+
+PROJECT: {project_name}
+
+1. PROJECT OVERVIEW
+This SOW describes the scope, deliverables, timeline, and costs for {project_name}.
+
+2. SCOPE OF WORK
+{deliverables}
+
+3. MILESTONES AND TIMELINE
+Start Date: {start_date}
+End Date: {end_date}
+
+{milestones}
+
+4. DELIVERABLES
+As outlined in Section 2 above. All deliverables subject to Client acceptance within 10 business days.
+
+5. PRICING AND PAYMENT
+Total Cost: {total_cost}
+Payment shall be made per the terms of the governing MSA.
+
+6. ASSUMPTIONS AND DEPENDENCIES
+- Client will provide timely access to required resources and information.
+- Changes to scope require a written Change Order signed by both Parties.
+
+7. ACCEPTANCE CRITERIA
+Deliverables shall be deemed accepted unless Client provides written rejection within 10 business days.
+
+________________________          ________________________
+{client_name}                     {provider_name}
+Date: _______________             Date: _______________

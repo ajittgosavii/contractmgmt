@@ -1,0 +1,45 @@
+VENDOR AGREEMENT
+
+This Vendor Agreement ("Agreement") is made effective as of {effective_date},
+
+by and between:
+
+{company_name} ("Company")
+and
+{vendor_name} ("Vendor")
+
+1. PRODUCTS/SERVICES
+The Vendor agrees to supply the following products/services:
+{products_services}
+
+2. TERM
+This Agreement shall be effective for {term_years} year(s) from the Effective Date, with automatic renewal unless either Party provides 60 days written notice of non-renewal.
+
+3. PRICING AND PAYMENT
+Payment terms: {payment_terms} from receipt of invoice.
+Prices shall remain fixed for the initial term unless mutually agreed in writing.
+
+4. DELIVERY
+Vendor shall deliver products/services in accordance with agreed timelines. Time is of the essence.
+
+5. QUALITY AND WARRANTIES
+Vendor warrants that all products/services shall conform to specifications and be free from defects.
+
+6. INDEMNIFICATION
+Vendor shall indemnify Company against claims arising from Vendor's negligence, breach, or product defects.
+
+7. LIMITATION OF LIABILITY
+Neither Party's liability shall exceed the total fees paid under this Agreement in the preceding 12 months.
+
+8. TERMINATION
+Either Party may terminate with 30 days written notice. Company may terminate immediately for material breach.
+
+9. CONFIDENTIALITY
+Both Parties agree to protect confidential information received from the other Party.
+
+10. GOVERNING LAW
+This Agreement shall be governed by the laws of {governing_law}.
+
+________________________          ________________________
+{company_name}                    {vendor_name}
+Date: _______________             Date: _______________
