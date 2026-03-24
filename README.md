@@ -1,6 +1,6 @@
-# Smart Contracts Management
+# Infosys Cobalt Powered AI Contract Lifecycle Management
 
-AI-Powered Contract Lifecycle Management Tool built with Streamlit and OpenAI GPT-4o.
+AI-Powered Contract Lifecycle Management Tool built with Streamlit and OpenAI GPT-4o, running on the Infosys Cobalt cloud platform.
 
 ## Overview
 
@@ -37,6 +37,7 @@ Enter your OpenAI API key in the sidebar to enable AI features.
 
 - **Frontend**: Streamlit
 - **AI**: OpenAI GPT-4o
+- **Cloud**: Infosys Cobalt
 - **Database**: SQLite (local)
 - **Charts**: Plotly
 - **Export**: PDF (fpdf2), DOCX (python-docx), Excel (openpyxl)

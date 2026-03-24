@@ -1,5 +1,5 @@
 """
-Smart Contracts Management - AI-Powered Contract Lifecycle Tool
+Infosys Cobalt Powered AI Contract Lifecycle Management
 Powered by OpenAI GPT-4o
 """
 
@@ -12,8 +12,8 @@ from datetime import datetime, date
 # Page config (must be first Streamlit call)
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Smart Contracts Management",
-    page_icon="📄",
+    page_title="Infosys Cobalt - AI Contract Lifecycle Management",
+    page_icon="🔷",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -70,24 +70,79 @@ AGENT_PROFILES = {
 }
 
 # ---------------------------------------------------------------------------
-# CSS
+# Dynamic Animated Logo (SVG)
 # ---------------------------------------------------------------------------
-st.markdown("""
+COBALT_LOGO_SVG = """
+<svg width="220" height="60" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cobaltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#007CC3;stop-opacity:1">
+        <animate attributeName="stop-color" values="#007CC3;#00AEEF;#5B2D8E;#007CC3" dur="4s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" style="stop-color:#5B2D8E;stop-opacity:1">
+        <animate attributeName="stop-color" values="#5B2D8E;#007CC3;#00AEEF;#5B2D8E" dur="4s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00AEEF"/>
+      <stop offset="100%" style="stop-color:#5B2D8E"/>
+    </linearGradient>
+  </defs>
+  <!-- Animated Cobalt network nodes -->
+  <circle cx="20" cy="30" r="6" fill="url(#nodeGrad)" opacity="0.9">
+    <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="44" cy="16" r="4" fill="#00AEEF" opacity="0.7">
+    <animate attributeName="cy" values="16;20;16" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="44" cy="44" r="4" fill="#5B2D8E" opacity="0.7">
+    <animate attributeName="cy" values="44;40;44" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Connection lines with pulse -->
+  <line x1="26" y1="28" x2="40" y2="18" stroke="#00AEEF" stroke-width="1.5" opacity="0.5">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+  </line>
+  <line x1="26" y1="32" x2="40" y2="42" stroke="#5B2D8E" stroke-width="1.5" opacity="0.5">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2.5s" repeatCount="indefinite"/>
+  </line>
+  <line x1="44" y1="20" x2="44" y2="40" stroke="url(#cobaltGrad)" stroke-width="1" opacity="0.4">
+    <animate attributeName="opacity" values="0.2;0.6;0.2" dur="3s" repeatCount="indefinite"/>
+  </line>
+  <!-- Infosys text -->
+  <text x="58" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="url(#cobaltGrad)">Infosys</text>
+  <!-- Cobalt badge -->
+  <rect x="58" y="34" rx="3" ry="3" width="56" height="16" fill="url(#cobaltGrad)" opacity="0.9">
+    <animate attributeName="opacity" values="0.85;1;0.85" dur="3s" repeatCount="indefinite"/>
+  </rect>
+  <text x="65" y="46" font-family="Arial, sans-serif" font-size="10" font-weight="600" fill="white">COBALT</text>
+  <!-- AI CLM text -->
+  <text x="122" y="28" font-family="Arial, sans-serif" font-size="11" font-weight="400" fill="#475569">AI Contract</text>
+  <text x="122" y="46" font-family="Arial, sans-serif" font-size="11" font-weight="400" fill="#475569">Lifecycle Mgmt</text>
+</svg>
+"""
+
+# ---------------------------------------------------------------------------
+# CSS — Infosys Cobalt Theme
+# ---------------------------------------------------------------------------
+st.markdown(f"""
 <style>
-    .main-header { font-size: 2rem; font-weight: 700; color: #1B6B93; margin-bottom: 0.5rem; }
-    .sub-header { font-size: 1rem; color: #64748B; margin-bottom: 1.5rem; }
-    .agent-card { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; border-left: 4px solid #1B6B93; }
-    .agent-name { font-size: 1.1rem; font-weight: 700; color: #1B6B93; }
-    .agent-desc { font-size: 0.85rem; color: #475569; margin-top: 0.3rem; }
-    .risk-critical { color: #DC2626; font-weight: 700; }
-    .risk-high { color: #EA580C; font-weight: 700; }
-    .risk-medium { color: #D97706; font-weight: 700; }
-    .risk-low { color: #16A34A; font-weight: 700; }
-    .metric-card { background: #F8FAFC; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #E2E8F0; }
-    .metric-value { font-size: 2rem; font-weight: 700; color: #1B6B93; }
-    .metric-label { font-size: 0.85rem; color: #64748B; }
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
-    .stTabs [data-baseweb="tab"] { padding: 8px 20px; border-radius: 8px 8px 0 0; }
+    .main-header {{ font-size: 2rem; font-weight: 700; color: #007CC3; margin-bottom: 0.5rem; }}
+    .sub-header {{ font-size: 1rem; color: #64748B; margin-bottom: 1.5rem; }}
+    .cobalt-brand {{ text-align: center; padding: 0.5rem 0; margin-bottom: 0.5rem; }}
+    .agent-card {{ background: linear-gradient(135deg, #EBF5FF 0%, #F0E6FF 100%); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; border-left: 4px solid #007CC3; }}
+    .agent-name {{ font-size: 1.1rem; font-weight: 700; color: #007CC3; }}
+    .agent-desc {{ font-size: 0.85rem; color: #475569; margin-top: 0.3rem; }}
+    .risk-critical {{ color: #DC2626; font-weight: 700; }}
+    .risk-high {{ color: #EA580C; font-weight: 700; }}
+    .risk-medium {{ color: #D97706; font-weight: 700; }}
+    .risk-low {{ color: #16A34A; font-weight: 700; }}
+    .metric-card {{ background: #F8FAFC; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #E2E8F0; }}
+    .metric-value {{ font-size: 2rem; font-weight: 700; color: #007CC3; }}
+    .metric-label {{ font-size: 0.85rem; color: #64748B; }}
+    .stTabs [data-baseweb="tab-list"] {{ gap: 8px; }}
+    .stTabs [data-baseweb="tab"] {{ padding: 8px 20px; border-radius: 8px 8px 0 0; }}
+    .sidebar .sidebar-content {{ background: linear-gradient(180deg, #001F3F 0%, #003366 100%); }}
+    .cobalt-footer {{ text-align: center; font-size: 0.75rem; color: #94A3B8; margin-top: 1rem; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -120,8 +175,7 @@ def _get_agent(agent_name: str):
 # Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown('<div class="main-header">📄 Smart Contracts</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">AI-Powered Contract Management</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="cobalt-brand">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
     st.divider()
 
     api_key = st.text_input("OpenAI API Key", type="password", value=st.session_state["api_key"], help="Enter your OpenAI API key to enable AI features")
@@ -145,8 +199,7 @@ with st.sidebar:
     )
 
     st.divider()
-    st.caption("Powered by OpenAI GPT-4o")
-    st.caption("© 2024 Smart Contracts Management")
+    st.markdown('<div class="cobalt-footer">Powered by OpenAI GPT-4o<br>Infosys Cobalt Cloud Platform</div>', unsafe_allow_html=True)
 
 
 # =====================================================================
@@ -700,7 +753,7 @@ def render_repository():
 # =====================================================================
 def render_agents():
     st.markdown('<div class="main-header">🤖 AI Agents</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Meet the intelligent agents powering Smart Contracts Management</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Meet the intelligent agents powering Infosys Cobalt AI Contract Lifecycle Management</div>', unsafe_allow_html=True)
 
     for name, profile in AGENT_PROFILES.items():
         st.markdown(f"""
@@ -718,7 +771,7 @@ def render_agents():
     3. **RiskRadar** performs deep risk analysis, scoring contracts on a 0-100 scale and identifying risky clauses, compliance gaps, and missing protections.
     4. **DiffLens** compares two contracts side-by-side, highlighting every meaningful difference and recommending which terms are more favorable.
 
-    All agents are powered by **OpenAI GPT-4o** for maximum accuracy and legal reasoning capability.
+    All agents are powered by **OpenAI GPT-4o** for maximum accuracy and legal reasoning capability, running on the **Infosys Cobalt** cloud platform.
     """)
 
 

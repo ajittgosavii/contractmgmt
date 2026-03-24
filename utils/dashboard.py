@@ -24,7 +24,7 @@ def risk_score_distribution_chart(df: pd.DataFrame) -> go.Figure:
     scored = df[df["risk_score"].notna() & (df["risk_score"] > 0)]
     if scored.empty:
         return _empty_chart("No risk scores yet")
-    fig = px.histogram(scored, x="risk_score", nbins=10, color_discrete_sequence=["#1B6B93"])
+    fig = px.histogram(scored, x="risk_score", nbins=10, color_discrete_sequence=["#007CC3"])
     fig.update_layout(title="Risk Score Distribution", xaxis_title="Risk Score", yaxis_title="Count", height=350, margin=dict(t=40, b=20, l=20, r=20))
     return fig
 
@@ -33,7 +33,7 @@ def contracts_by_type_chart(df: pd.DataFrame) -> go.Figure:
     if df.empty:
         return _empty_chart("No contracts yet")
     counts = df["contract_type"].value_counts()
-    fig = px.bar(x=counts.index.tolist(), y=counts.values.tolist(), color_discrete_sequence=["#1B6B93"])
+    fig = px.bar(x=counts.index.tolist(), y=counts.values.tolist(), color_discrete_sequence=["#007CC3"])
     fig.update_layout(title="Contracts by Type", xaxis_title="Type", yaxis_title="Count", height=350, margin=dict(t=40, b=20, l=20, r=20))
     return fig
 
@@ -61,7 +61,7 @@ def risk_gauge_chart(score: int) -> go.Figure:
         value=score,
         gauge=dict(
             axis=dict(range=[0, 100]),
-            bar=dict(color="#1B6B93"),
+            bar=dict(color="#007CC3"),
             steps=[
                 dict(range=[0, 20], color="#D1FAE5"),
                 dict(range=[20, 40], color="#FEF3C7"),
