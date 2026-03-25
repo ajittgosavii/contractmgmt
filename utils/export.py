@@ -21,6 +21,25 @@ def _safe_text(text: str) -> str:
     return text.encode("latin-1", errors="replace").decode("latin-1")
 
 
+def _safe_multi_cell(pdf, text: str, h: int = 5):
+    """Write text to PDF, catching any rendering errors gracefully."""
+    text = _safe_text(text)
+    if not text.strip():
+        return
+    try:
+        pdf.multi_cell(w=0, h=h, text=text)
+    except Exception:
+        # Fallback: write line by line, skip any that fail
+        for line in text.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                pdf.cell(w=0, h=h, text=line[:120], ln=True)
+            except Exception:
+                pass
+
+
 def export_contract_pdf(contract_text: str, metadata: dict = None) -> bytes:
     from fpdf import FPDF
 
@@ -101,15 +120,15 @@ def export_risk_report_pdf(analysis: dict) -> bytes:
         recommendation = _safe_text(clause.get("recommendation", ""))
 
         pdf.set_font("Helvetica", "B", 10)
-        pdf.cell(0, 6, f"[{severity}] {risk_type}", ln=True)
+        pdf.cell(0, 6, f"[{severity}] {risk_type}"[:80], ln=True)
 
         if explanation:
             pdf.set_font("Helvetica", "", 9)
-            pdf.multi_cell(0, 5, explanation)
+            _safe_multi_cell(pdf, explanation)
 
         if recommendation:
-            pdf.set_font("Helvetica", "I", 9)
-            pdf.multi_cell(0, 5, f"Recommendation: {recommendation}")
+            pdf.set_font("Helvetica", "", 9)
+            _safe_multi_cell(pdf, "Recommendation: " + recommendation)
 
         pdf.ln(3)
 
@@ -121,7 +140,7 @@ def export_risk_report_pdf(analysis: dict) -> bytes:
         pdf.set_font("Helvetica", "", 9)
         for m in missing:
             text = _safe_text(f"- {m.get('protection', '')}: {m.get('recommendation', '')}")
-            pdf.multi_cell(0, 5, text)
+            _safe_multi_cell(pdf, text)
         pdf.ln(3)
 
     # Negotiation points
@@ -132,7 +151,7 @@ def export_risk_report_pdf(analysis: dict) -> bytes:
         pdf.set_font("Helvetica", "", 9)
         for n in negotiations:
             text = _safe_text(f"[{n.get('priority', '')}] {n.get('point', '')} - {n.get('suggested_change', '')}")
-            pdf.multi_cell(0, 5, text)
+            _safe_multi_cell(pdf, text)
         pdf.ln(3)
 
     return pdf.output()

@@ -159,6 +159,10 @@ st.markdown(f"""
     /* Compact login form */
     .login-container {{ max-width: 420px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,124,195,0.10); border: 1px solid #E2E8F0; }}
     .login-container h2 {{ color: #007CC3; margin-bottom: 1rem; }}
+    /* Sidebar nav styling */
+    .nav-section {{ font-size: 0.7rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0.8rem 0 0.3rem 0; }}
+    div[data-testid="stSidebar"] .stButton > button {{ text-align: left; justify-content: flex-start; font-size: 0.85rem; padding: 0.35rem 0.6rem; border: none; background: transparent; color: #334155; }}
+    div[data-testid="stSidebar"] .stButton > button:hover {{ background: #EBF5FF; color: #007CC3; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -247,86 +251,58 @@ def _smart_extract(uploaded_file) -> tuple[str, bool]:
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
+def _nav_btn(label: str, key: str):
+    """Sidebar nav button — sets page in session state."""
+    if st.button(label, key=key, use_container_width=True):
+        st.session_state["_page"] = label
+        st.rerun()
+
+# Initialize page in session state
+if "_page" not in st.session_state:
+    st.session_state["_page"] = "🏠 Dashboard"
+
 with st.sidebar:
     st.markdown(f'<div class="cobalt-brand">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
 
-    # User info and logout in a compact row
+    # User info
     role_class = f"role-{current_role}"
-    ucol1, ucol2 = st.columns([3, 1])
-    with ucol1:
-        st.markdown(f'**{name}** <span class="auth-badge {role_class}">{current_role.upper()}</span>', unsafe_allow_html=True)
-    with ucol2:
-        try:
-            authenticator.logout(location="sidebar")
-        except Exception:
-            authenticator.logout("Logout", "sidebar")
+    st.markdown(f'**{name}** <span class="auth-badge {role_class}">{current_role.upper()}</span>', unsafe_allow_html=True)
+    try:
+        authenticator.logout(location="sidebar")
+    except Exception:
+        authenticator.logout("Logout", "sidebar")
 
     # API key — show only if not loaded from secrets
     if not st.session_state["api_key"]:
         api_key = st.text_input("OpenAI API Key", type="password", help="Or set OPENAI_API_KEY in Streamlit secrets")
         if api_key:
             st.session_state["api_key"] = api_key
-    else:
-        st.caption("API Key loaded from secrets")
 
-    st.divider()
+    # ── Navigation ──
+    st.markdown('<div class="nav-section">Overview</div>', unsafe_allow_html=True)
+    _nav_btn("🏠 Dashboard", "nav_dash")
 
-    # Grouped navigation with selectbox sections
-    st.markdown("##### Navigate")
+    st.markdown('<div class="nav-section">Contracts</div>', unsafe_allow_html=True)
+    _nav_btn("🔍 Upload & Review", "nav_upload")
+    _nav_btn("📦 Bulk Upload", "nav_bulk")
+    _nav_btn("📁 Repository", "nav_repo")
 
-    nav_core = ["🏠 Dashboard", "🔍 Upload & Review", "📦 Bulk Upload"]
-    nav_ai = ["✍️ Draft Generation", "🛡️ Risk Analysis", "⚖️ Contract Comparison"]
-    nav_manage = ["📁 Contract Repository", "📚 Clause Library"]
-    nav_admin = ["📧 Email Alerts", "📋 Audit Trail", "🤖 AI Agents"]
+    st.markdown('<div class="nav-section">AI Tools</div>', unsafe_allow_html=True)
+    _nav_btn("✍️ Draft Generation", "nav_draft")
+    _nav_btn("🛡️ Risk Analysis", "nav_risk")
+    _nav_btn("⚖️ Contract Comparison", "nav_compare")
+    _nav_btn("📚 Clause Library", "nav_clause")
+
+    st.markdown('<div class="nav-section">Admin</div>', unsafe_allow_html=True)
+    _nav_btn("📧 Email Alerts", "nav_email")
+    _nav_btn("📋 Audit Trail", "nav_audit")
+    _nav_btn("🤖 AI Agents", "nav_agents")
     if current_role == "admin":
-        nav_admin.append("👥 User Management")
+        _nav_btn("👥 User Management", "nav_users")
 
-    all_items = nav_core + nav_ai + nav_manage + nav_admin
-
-    # Use a selectbox for compact navigation
-    page = st.selectbox(
-        "Page",
-        all_items,
-        format_func=lambda x: x,
-        label_visibility="collapsed",
-    )
-
-    # Quick-access buttons for most used pages
-    st.markdown("##### Quick Access")
-    qa1, qa2, qa3 = st.columns(3)
-    with qa1:
-        if st.button("📤", help="Upload & Review", use_container_width=True):
-            st.session_state["nav_override"] = "🔍 Upload & Review"
-            st.rerun()
-    with qa2:
-        if st.button("🛡️", help="Risk Analysis", use_container_width=True):
-            st.session_state["nav_override"] = "🛡️ Risk Analysis"
-            st.rerun()
-    with qa3:
-        if st.button("✍️", help="Draft Generation", use_container_width=True):
-            st.session_state["nav_override"] = "✍️ Draft Generation"
-            st.rerun()
-
-    qa4, qa5, qa6 = st.columns(3)
-    with qa4:
-        if st.button("⚖️", help="Compare", use_container_width=True):
-            st.session_state["nav_override"] = "⚖️ Contract Comparison"
-            st.rerun()
-    with qa5:
-        if st.button("📁", help="Repository", use_container_width=True):
-            st.session_state["nav_override"] = "📁 Contract Repository"
-            st.rerun()
-    with qa6:
-        if st.button("📦", help="Bulk Upload", use_container_width=True):
-            st.session_state["nav_override"] = "📦 Bulk Upload"
-            st.rerun()
-
-    st.divider()
     st.markdown('<div class="cobalt-footer">Powered by OpenAI GPT-4o<br>Infosys Cobalt Cloud Platform</div>', unsafe_allow_html=True)
 
-# Handle quick-access button navigation
-if "nav_override" in st.session_state:
-    page = st.session_state.pop("nav_override")
+page = st.session_state["_page"]
 
 
 # =====================================================================
@@ -1374,7 +1350,7 @@ elif page == "🛡️ Risk Analysis":
     render_risk_analysis()
 elif page == "⚖️ Contract Comparison":
     render_comparison()
-elif page == "📁 Contract Repository":
+elif page in ("📁 Contract Repository", "📁 Repository"):
     render_repository()
 elif page == "📚 Clause Library":
     render_clause_library()
