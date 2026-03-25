@@ -171,16 +171,13 @@ st.markdown(f"""
 # ---------------------------------------------------------------------------
 authenticator, auth_config = setup_authentication()
 
-# Check if already authenticated (cookie/session)
-authentication_status = st.session_state.get("authentication_status")
-
-if not authentication_status:
-    # Centered login layout
+# Always check session first
+if not st.session_state.get("authentication_status"):
+    # Not logged in — show centered login page
     _spacer_l, login_col, _spacer_r = st.columns([1, 1.5, 1])
     with login_col:
         st.markdown(f'<div style="text-align:center; margin-top: 1rem;">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
         st.markdown('<div class="sub-header" style="text-align:center;">AI Contract Lifecycle Management</div>', unsafe_allow_html=True)
-
         try:
             authenticator.login(location="main")
         except Exception:
@@ -188,14 +185,13 @@ if not authentication_status:
                 authenticator.login("Login", "main")
             except Exception:
                 pass
-
-        authentication_status = st.session_state.get("authentication_status")
-
-        if authentication_status is False:
+        if st.session_state.get("authentication_status") is False:
             st.error("Invalid username or password")
-        if not authentication_status:
+        if not st.session_state.get("authentication_status"):
             st.caption("**Credentials:** admin / admin123 | analyst / analyst123 | viewer / viewer123")
             st.stop()
+        # If we reach here, user just logged in — rerun to clear login UI
+        st.rerun()
 
 name = st.session_state.get("name")
 username = st.session_state.get("username")
