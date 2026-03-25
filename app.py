@@ -221,6 +221,13 @@ for k, v in DEFAULTS.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
+# Auto-load API key from Streamlit secrets if available
+if not st.session_state["api_key"]:
+    try:
+        st.session_state["api_key"] = st.secrets["OPENAI_API_KEY"]
+    except (KeyError, FileNotFoundError):
+        pass
+
 
 def _get_agent(agent_name: str):
     """Instantiate a named agent with the current API key."""
@@ -243,41 +250,83 @@ def _smart_extract(uploaded_file) -> tuple[str, bool]:
 with st.sidebar:
     st.markdown(f'<div class="cobalt-brand">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
 
-    # User info
+    # User info and logout in a compact row
     role_class = f"role-{current_role}"
-    st.markdown(f'Welcome, **{name}** <span class="auth-badge {role_class}">{current_role.upper()}</span>', unsafe_allow_html=True)
-    try:
-        authenticator.logout(location="sidebar")
-    except Exception:
-        authenticator.logout("Logout", "sidebar")
+    ucol1, ucol2 = st.columns([3, 1])
+    with ucol1:
+        st.markdown(f'**{name}** <span class="auth-badge {role_class}">{current_role.upper()}</span>', unsafe_allow_html=True)
+    with ucol2:
+        try:
+            authenticator.logout(location="sidebar")
+        except Exception:
+            authenticator.logout("Logout", "sidebar")
+
+    # API key — show only if not loaded from secrets
+    if not st.session_state["api_key"]:
+        api_key = st.text_input("OpenAI API Key", type="password", help="Or set OPENAI_API_KEY in Streamlit secrets")
+        if api_key:
+            st.session_state["api_key"] = api_key
+    else:
+        st.caption("API Key loaded from secrets")
+
     st.divider()
 
-    api_key = st.text_input("OpenAI API Key", type="password", value=st.session_state["api_key"], help="Enter your OpenAI API key to enable AI features")
-    if api_key:
-        st.session_state["api_key"] = api_key
+    # Grouped navigation with selectbox sections
+    st.markdown("##### Navigate")
 
-    st.divider()
-
-    nav_items = [
-        "🏠 Dashboard",
-        "🔍 Upload & Review",
-        "📦 Bulk Upload",
-        "✍️ Draft Generation",
-        "🛡️ Risk Analysis",
-        "⚖️ Contract Comparison",
-        "📁 Contract Repository",
-        "📚 Clause Library",
-        "📧 Email Alerts",
-        "📋 Audit Trail",
-        "🤖 AI Agents",
-    ]
+    nav_core = ["🏠 Dashboard", "🔍 Upload & Review", "📦 Bulk Upload"]
+    nav_ai = ["✍️ Draft Generation", "🛡️ Risk Analysis", "⚖️ Contract Comparison"]
+    nav_manage = ["📁 Contract Repository", "📚 Clause Library"]
+    nav_admin = ["📧 Email Alerts", "📋 Audit Trail", "🤖 AI Agents"]
     if current_role == "admin":
-        nav_items.append("👥 User Management")
+        nav_admin.append("👥 User Management")
 
-    page = st.radio("Navigation", nav_items, label_visibility="collapsed")
+    all_items = nav_core + nav_ai + nav_manage + nav_admin
+
+    # Use a selectbox for compact navigation
+    page = st.selectbox(
+        "Page",
+        all_items,
+        format_func=lambda x: x,
+        label_visibility="collapsed",
+    )
+
+    # Quick-access buttons for most used pages
+    st.markdown("##### Quick Access")
+    qa1, qa2, qa3 = st.columns(3)
+    with qa1:
+        if st.button("📤", help="Upload & Review", use_container_width=True):
+            st.session_state["nav_override"] = "🔍 Upload & Review"
+            st.rerun()
+    with qa2:
+        if st.button("🛡️", help="Risk Analysis", use_container_width=True):
+            st.session_state["nav_override"] = "🛡️ Risk Analysis"
+            st.rerun()
+    with qa3:
+        if st.button("✍️", help="Draft Generation", use_container_width=True):
+            st.session_state["nav_override"] = "✍️ Draft Generation"
+            st.rerun()
+
+    qa4, qa5, qa6 = st.columns(3)
+    with qa4:
+        if st.button("⚖️", help="Compare", use_container_width=True):
+            st.session_state["nav_override"] = "⚖️ Contract Comparison"
+            st.rerun()
+    with qa5:
+        if st.button("📁", help="Repository", use_container_width=True):
+            st.session_state["nav_override"] = "📁 Contract Repository"
+            st.rerun()
+    with qa6:
+        if st.button("📦", help="Bulk Upload", use_container_width=True):
+            st.session_state["nav_override"] = "📦 Bulk Upload"
+            st.rerun()
 
     st.divider()
     st.markdown('<div class="cobalt-footer">Powered by OpenAI GPT-4o<br>Infosys Cobalt Cloud Platform</div>', unsafe_allow_html=True)
+
+# Handle quick-access button navigation
+if "nav_override" in st.session_state:
+    page = st.session_state.pop("nav_override")
 
 
 # =====================================================================
