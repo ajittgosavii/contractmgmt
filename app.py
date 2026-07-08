@@ -219,14 +219,16 @@ if not st.session_state.get("authentication_status"):
         border-radius:10px; border:1px solid #dbe3ee; padding:.6rem .8rem; background:#fff; }
       [data-testid="stForm"] [data-testid="stTextInput"] input:focus {
         border-color:#007CC3; box-shadow:0 0 0 3px rgba(0,124,195,.15); }
-      [data-testid="stForm"] button {
+      /* Only the submit button gets the full-width gradient — leave the
+         password reveal (eye) button untouched. */
+      [data-testid="stForm"] [data-testid="stFormSubmitButton"] button {
         width:100%; background:linear-gradient(135deg,#007CC3,#005A9C) !important; color:#fff !important;
         border:none !important; border-radius:11px !important; font-weight:700 !important; padding:.6rem !important;
         box-shadow:0 8px 20px rgba(0,124,195,.35) !important; }
-      [data-testid="stForm"] button:hover { filter:brightness(1.07); transform:translateY(-1px); }
-      .glass-head { color:#0F172A; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800;
-        font-size:1.35rem; margin:.2rem 0 .1rem; }
-      .glass-sub { color:#64748B; font-size:.86rem; margin-bottom:.4rem; }
+      [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover { filter:brightness(1.07); transform:translateY(-1px); }
+      .glass-head { color:#F1F5F9; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800;
+        font-size:1.5rem; margin:.2rem 0 .1rem; }
+      .glass-sub { color:#94A3B8; font-size:.9rem; margin-bottom:.4rem; }
       .cred-box { margin-top:.9rem; padding:.7rem .85rem; border-radius:12px; background:rgba(255,255,255,.08);
         border:1px solid rgba(255,255,255,.18); color:#cbd5e1; font-size:.78rem; line-height:1.7; z-index:2; position:relative; }
       .cred-box code { color:#7DD3FC; background:rgba(125,211,252,.12); padding:1px 6px; border-radius:5px; }

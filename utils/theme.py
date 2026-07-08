@@ -210,8 +210,14 @@ div[data-testid="stSidebar"] .stButton > button[kind="primary"] {{
 # ---------------------------------------------------------------------------
 # Component builders (return HTML strings)
 # ---------------------------------------------------------------------------
+def _compact(markup: str) -> str:
+    """Collapse indentation so Streamlit's Markdown doesn't treat the HTML as a
+    code block (any line indented 4+ spaces would render as literal text)."""
+    return "".join(line.strip() for line in markup.strip().splitlines())
+
+
 def page_hero(title: str, subtitle: str = "", icon: str = "📄") -> str:
-    return f"""
+    return _compact(f"""
     <div class="page-hero"><div class="hero-row">
       <div class="hero-ico">{icon}</div>
       <div>
@@ -219,7 +225,7 @@ def page_hero(title: str, subtitle: str = "", icon: str = "📄") -> str:
         {f'<div class="hero-sub">{html.escape(subtitle)}</div>' if subtitle else ''}
       </div>
     </div></div>
-    """
+    """)
 
 
 _TONES = {
@@ -241,7 +247,7 @@ def kpi_card(label: str, value, icon: str = "📊", tone: str = "cobalt",
         arrow = {"up": "▲", "down": "▼"}.get(trend_dir, "•")
         trend_html = f'<span class="kpi-trend {cls}">{arrow} {html.escape(str(trend))}</span>'
     foot_html = f'<div class="kpi-foot">{html.escape(foot)}</div>' if foot else ""
-    return f"""
+    return _compact(f"""
     <div class="kpi-card" style="--accent:{accent}; --accent-soft:{soft};">
       <div class="kpi-top">
         <span class="kpi-ico" style="background:{soft};">{icon}</span>
@@ -251,11 +257,11 @@ def kpi_card(label: str, value, icon: str = "📊", tone: str = "cobalt",
       <div class="kpi-value">{html.escape(str(value))}</div>
       {foot_html}
     </div>
-    """
+    """)
 
 
 def kpi_row(cards: list[str]) -> str:
-    return f'<div class="kpi-grid">{"".join(cards)}</div>'
+    return _compact(f'<div class="kpi-grid">{"".join(cards)}</div>')
 
 
 def section_title(text: str, icon: str = "") -> str:
@@ -273,13 +279,13 @@ def risk_pill(level: str) -> str:
 
 
 def empty_state(title: str, message: str = "", icon: str = "📭") -> str:
-    return f"""
+    return _compact(f"""
     <div class="empty-state">
       <div class="empty-ico">{icon}</div>
       <div class="empty-title">{html.escape(title)}</div>
       {f'<div class="empty-msg">{html.escape(message)}</div>' if message else ''}
     </div>
-    """
+    """)
 
 
 # ---------------------------------------------------------------------------
