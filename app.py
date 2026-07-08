@@ -25,6 +25,8 @@ from agents.agent_extractor import ContractExtractorAgent
 from agents.agent_drafter import ContractDrafterAgent
 from agents.agent_risk import ContractRiskAgent
 from agents.agent_comparator import ContractComparatorAgent
+from agents.agent_qa import ContractQAAgent, SUGGESTED_QUESTIONS
+from utils import theme
 from utils.file_parser import extract_text, save_uploaded_file
 from utils.ocr import extract_text_with_ocr
 from utils.config import CONTRACT_TYPES, CONTRACT_STATUSES, UPLOAD_DIR
@@ -33,6 +35,7 @@ from utils.dashboard import (
     contracts_by_status_chart,
     risk_score_distribution_chart,
     contracts_by_type_chart,
+    risk_by_type_chart,
     expiring_contracts_timeline,
     risk_gauge_chart,
 )
@@ -80,6 +83,11 @@ AGENT_PROFILES = {
         "class": ContractComparatorAgent,
         "icon": "⚖️",
         "description": "Contract comparison analyst — performs side-by-side analysis of two contracts, highlights differences, and identifies which terms are more favorable.",
+    },
+    "ContractCopilot": {
+        "class": ContractQAAgent,
+        "icon": "💬",
+        "description": "Conversational contract assistant — answer plain-English questions grounded in a specific contract, with citations to the exact clause it relied on.",
     },
 }
 
@@ -131,38 +139,16 @@ COBALT_LOGO_SVG = """
 """
 
 # ---------------------------------------------------------------------------
-# CSS — Infosys Cobalt Theme
+# CSS — Enterprise design system (utils/theme.py)
 # ---------------------------------------------------------------------------
-st.markdown(f"""
+theme.inject()
+st.markdown("""
 <style>
-    .main-header {{ font-size: 2rem; font-weight: 700; color: #007CC3; margin-bottom: 0.5rem; }}
-    .sub-header {{ font-size: 1rem; color: #64748B; margin-bottom: 1.5rem; }}
-    .cobalt-brand {{ text-align: center; padding: 0.5rem 0; margin-bottom: 0.5rem; }}
-    .agent-card {{ background: linear-gradient(135deg, #EBF5FF 0%, #F0E6FF 100%); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; border-left: 4px solid #007CC3; }}
-    .agent-name {{ font-size: 1.1rem; font-weight: 700; color: #007CC3; }}
-    .agent-desc {{ font-size: 0.85rem; color: #475569; margin-top: 0.3rem; }}
-    .risk-critical {{ color: #DC2626; font-weight: 700; }}
-    .risk-high {{ color: #EA580C; font-weight: 700; }}
-    .risk-medium {{ color: #D97706; font-weight: 700; }}
-    .risk-low {{ color: #16A34A; font-weight: 700; }}
-    .metric-card {{ background: #F8FAFC; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid #E2E8F0; }}
-    .metric-value {{ font-size: 2rem; font-weight: 700; color: #007CC3; }}
-    .metric-label {{ font-size: 0.85rem; color: #64748B; }}
-    .stTabs [data-baseweb="tab-list"] {{ gap: 8px; }}
-    .stTabs [data-baseweb="tab"] {{ padding: 8px 20px; border-radius: 8px 8px 0 0; }}
-    .cobalt-footer {{ text-align: center; font-size: 0.75rem; color: #94A3B8; margin-top: 1rem; }}
-    .ocr-badge {{ background: #FBBF24; color: #1E293B; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }}
-    .auth-badge {{ display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }}
-    .role-admin {{ background: #DC2626; color: white; }}
-    .role-analyst {{ background: #007CC3; color: white; }}
-    .role-viewer {{ background: #94A3B8; color: white; }}
-    /* Compact login form */
-    .login-container {{ max-width: 420px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,124,195,0.10); border: 1px solid #E2E8F0; }}
-    .login-container h2 {{ color: #007CC3; margin-bottom: 1rem; }}
-    /* Sidebar nav styling */
-    .nav-section {{ font-size: 0.7rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0.8rem 0 0.3rem 0; }}
-    div[data-testid="stSidebar"] .stButton > button {{ text-align: left; justify-content: flex-start; font-size: 0.85rem; padding: 0.35rem 0.6rem; border: none; background: transparent; color: #334155; }}
-    div[data-testid="stSidebar"] .stButton > button:hover {{ background: #EBF5FF; color: #007CC3; }}
+    .risk-critical { color: #DC2626; font-weight: 700; }
+    .risk-high { color: #EA580C; font-weight: 700; }
+    .risk-medium { color: #D97706; font-weight: 700; }
+    .risk-low { color: #16A34A; font-weight: 700; }
+    .auth-badge { display:inline-block; padding:2px 9px; border-radius:6px; font-size:.7rem; font-weight:700; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -173,11 +159,110 @@ authenticator, auth_config = setup_authentication()
 
 # Always check session first
 if not st.session_state.get("authentication_status"):
-    # Not logged in — show centered login page
-    _spacer_l, login_col, _spacer_r = st.columns([1, 1.5, 1])
-    with login_col:
-        st.markdown(f'<div style="text-align:center; margin-top: 1rem;">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sub-header" style="text-align:center;">AI Contract Lifecycle Management</div>', unsafe_allow_html=True)
+    # ---- Immersive, animated login experience ----
+    st.markdown("""
+    <style>
+      #MainMenu, header[data-testid="stHeader"], [data-testid="stSidebar"],
+      [data-testid="stToolbar"] { display: none !important; }
+      .main .block-container { padding-top: 2.2rem !important; max-width: 1180px; }
+
+      /* Animated aurora background */
+      .stApp {
+        background: #070c1a;
+        background-image:
+          radial-gradient(closest-side at 18% 22%, rgba(0,124,195,.45), transparent 70%),
+          radial-gradient(closest-side at 82% 18%, rgba(91,45,142,.45), transparent 70%),
+          radial-gradient(closest-side at 25% 85%, rgba(0,174,239,.35), transparent 70%),
+          radial-gradient(closest-side at 78% 80%, rgba(14,165,233,.30), transparent 70%);
+        background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%;
+        animation: aurora 18s ease-in-out infinite;
+      }
+      @keyframes aurora {
+        0%,100% { background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%; }
+        50%     { background-position: 100% 50%, 0% 50%, 100% 0%, 0% 100%; }
+      }
+      /* Floating orbs */
+      .orb { position: fixed; border-radius: 50%; filter: blur(6px); opacity:.5; z-index:0;
+             animation: float 12s ease-in-out infinite; }
+      .orb1 { width:120px; height:120px; top:12%; left:8%; background:radial-gradient(circle,#00AEEF,transparent); }
+      .orb2 { width:80px;  height:80px;  top:70%; left:14%; background:radial-gradient(circle,#5B2D8E,transparent); animation-delay:-3s; }
+      .orb3 { width:140px; height:140px; top:22%; right:10%; background:radial-gradient(circle,#007CC3,transparent); animation-delay:-6s; }
+      @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-26px)} }
+
+      .login-wrap { position:relative; z-index:2; animation: rise .7s cubic-bezier(.2,.8,.2,1) both; }
+      @keyframes rise { from{opacity:0; transform:translateY(22px)} to{opacity:1; transform:none} }
+
+      .lg-eyebrow { display:inline-block; color:#7DD3FC; font-weight:700; font-size:.72rem;
+        letter-spacing:.18em; text-transform:uppercase; padding:5px 12px; border:1px solid rgba(125,211,252,.35);
+        border-radius:999px; background:rgba(125,211,252,.08); }
+      .lg-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:3.1rem; line-height:1.05;
+        margin:1.1rem 0 .6rem; background:linear-gradient(90deg,#ffffff,#7DD3FC,#c4b5fd,#ffffff);
+        background-size:300% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+        animation: shimmer 6s linear infinite; }
+      @keyframes shimmer { to { background-position:300% 0; } }
+      .lg-sub { color:#cbd5e1; font-size:1.05rem; max-width:460px; line-height:1.6; }
+      .lg-chips { margin-top:1.4rem; display:flex; flex-wrap:wrap; gap:.5rem; }
+      .lg-chip { color:#e2e8f0; font-size:.82rem; font-weight:600; padding:7px 13px; border-radius:10px;
+        background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(6px); }
+      .lg-chip b { color:#7DD3FC; }
+      .lg-stats { margin-top:1.8rem; display:flex; gap:2rem; }
+      .lg-stat .n { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.7rem; color:#fff; }
+      .lg-stat .l { color:#94a3b8; font-size:.78rem; }
+
+      /* Glass login card = the auth form */
+      [data-testid="stForm"] {
+        background: rgba(255,255,255,.90); backdrop-filter: blur(16px);
+        border:1px solid rgba(255,255,255,.5); border-radius:20px;
+        box-shadow: 0 30px 70px rgba(2,8,23,.55); padding:1.9rem 1.7rem !important; margin-top:.5rem;
+      }
+      [data-testid="stForm"] [data-testid="stTextInput"] input {
+        border-radius:10px; border:1px solid #dbe3ee; padding:.6rem .8rem; background:#fff; }
+      [data-testid="stForm"] [data-testid="stTextInput"] input:focus {
+        border-color:#007CC3; box-shadow:0 0 0 3px rgba(0,124,195,.15); }
+      [data-testid="stForm"] button {
+        width:100%; background:linear-gradient(135deg,#007CC3,#005A9C) !important; color:#fff !important;
+        border:none !important; border-radius:11px !important; font-weight:700 !important; padding:.6rem !important;
+        box-shadow:0 8px 20px rgba(0,124,195,.35) !important; }
+      [data-testid="stForm"] button:hover { filter:brightness(1.07); transform:translateY(-1px); }
+      .glass-head { color:#0F172A; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800;
+        font-size:1.35rem; margin:.2rem 0 .1rem; }
+      .glass-sub { color:#64748B; font-size:.86rem; margin-bottom:.4rem; }
+      .cred-box { margin-top:.9rem; padding:.7rem .85rem; border-radius:12px; background:rgba(255,255,255,.08);
+        border:1px solid rgba(255,255,255,.18); color:#cbd5e1; font-size:.78rem; line-height:1.7; z-index:2; position:relative; }
+      .cred-box code { color:#7DD3FC; background:rgba(125,211,252,.12); padding:1px 6px; border-radius:5px; }
+    </style>
+    <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+    """, unsafe_allow_html=True)
+
+    left, right = st.columns([1.08, 0.92], gap="large")
+    with left:
+        st.markdown(f"""
+        <div class="login-wrap">
+          <span class="lg-eyebrow">Infosys Cobalt · Enterprise CLM</span>
+          <div class="lg-title">AI Contract<br>Lifecycle Management</div>
+          <div class="lg-sub">Extract, draft, assess, compare and converse with your
+          contracts — a unified, AI-native workspace for the entire contract lifecycle.</div>
+          <div class="lg-chips">
+            <span class="lg-chip">🔍 <b>Extract</b></span>
+            <span class="lg-chip">✍️ <b>Draft</b></span>
+            <span class="lg-chip">🛡️ <b>Risk</b></span>
+            <span class="lg-chip">⚖️ <b>Compare</b></span>
+            <span class="lg-chip">💬 <b>Copilot</b></span>
+            <span class="lg-chip">✅ <b>Obligations</b></span>
+          </div>
+          <div class="lg-stats">
+            <div class="lg-stat"><div class="n">5</div><div class="l">AI agents</div></div>
+            <div class="lg-stat"><div class="n">6+</div><div class="l">Contract types</div></div>
+            <div class="lg-stat"><div class="n">100%</div><div class="l">Audit-tracked</div></div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with right:
+        st.markdown('<div class="login-wrap">', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center; margin-bottom:.3rem;">{COBALT_LOGO_SVG}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="glass-head">Welcome back</div>'
+                    '<div class="glass-sub">Sign in to your contract workspace</div>', unsafe_allow_html=True)
         try:
             authenticator.login(location="main")
         except Exception:
@@ -187,11 +272,16 @@ if not st.session_state.get("authentication_status"):
                 pass
         if st.session_state.get("authentication_status") is False:
             st.error("Invalid username or password")
-        if not st.session_state.get("authentication_status"):
-            st.caption("**Credentials:** admin / admin123 | analyst / analyst123 | viewer / viewer123")
-            st.stop()
-        # If we reach here, user just logged in — rerun to clear login UI
-        st.rerun()
+        st.markdown(
+            '<div class="cred-box"><b>Demo access</b> &nbsp;·&nbsp; '
+            '<code>admin / admin123</code> &nbsp; <code>analyst / analyst123</code> &nbsp; '
+            '<code>viewer / viewer123</code></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if not st.session_state.get("authentication_status"):
+        st.stop()
+    # If we reach here, user just logged in — rerun to clear login UI
+    st.rerun()
 
 name = st.session_state.get("name")
 username = st.session_state.get("username")
@@ -248,8 +338,10 @@ def _smart_extract(uploaded_file) -> tuple[str, bool]:
 # Sidebar
 # ---------------------------------------------------------------------------
 def _nav_btn(label: str, key: str):
-    """Sidebar nav button — sets page in session state."""
-    if st.button(label, key=key, use_container_width=True):
+    """Sidebar nav button — sets page in session state, highlights active."""
+    active = st.session_state.get("_page") == label
+    if st.button(label, key=key, use_container_width=True,
+                 type="primary" if active else "secondary"):
         st.session_state["_page"] = label
         st.rerun()
 
@@ -282,8 +374,10 @@ with st.sidebar:
     _nav_btn("🔍 Upload & Review", "nav_upload")
     _nav_btn("📦 Bulk Upload", "nav_bulk")
     _nav_btn("📁 Repository", "nav_repo")
+    _nav_btn("✅ Obligations & Renewals", "nav_obl")
 
     st.markdown('<div class="nav-section">AI Tools</div>', unsafe_allow_html=True)
+    _nav_btn("💬 Contract Copilot", "nav_copilot")
     _nav_btn("✍️ Draft Generation", "nav_draft")
     _nav_btn("🛡️ Risk Analysis", "nav_risk")
     _nav_btn("⚖️ Contract Comparison", "nav_compare")
@@ -305,37 +399,50 @@ page = st.session_state["_page"]
 # PAGE: Dashboard
 # =====================================================================
 def render_dashboard():
-    st.markdown('<div class="main-header">🏠 Dashboard</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="main-header">🏠 Welcome back, {name.split()[0]}</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Contract portfolio overview and key metrics</div>', unsafe_allow_html=True)
 
     stats = db.get_dashboard_stats()
     contracts_df = db.load_contracts()
+    obl_stats = db.get_obligation_stats()
 
-    # KPI row
-    c1, c2, c3, c4, c5 = st.columns(5)
-    with c1:
-        st.metric("Total Contracts", stats["total"])
-    with c2:
-        st.metric("Active", stats["by_status"].get("Active", 0))
-    with c3:
-        st.metric("High Risk", stats["high_risk_count"], delta_color="inverse")
-    with c4:
-        st.metric("Expiring Soon", stats["expiring_soon"], delta_color="inverse")
-    with c5:
-        st.metric("Avg Risk Score", stats["avg_risk"])
+    active = stats["by_status"].get("Active", 0)
+    total = stats["total"]
+    active_pct = f"{round(active / total * 100)}% of portfolio" if total else "—"
+    avg_risk = stats["avg_risk"]
+    risk_band = "Low exposure" if avg_risk < 40 else "Elevated" if avg_risk < 60 else "High exposure"
 
-    st.divider()
+    st.markdown(theme.kpi_row([
+        theme.kpi_card("Total Contracts", total, "📄", "cobalt", foot="Across all types"),
+        theme.kpi_card("Active", active, "✅", "success", foot=active_pct),
+        theme.kpi_card("High Risk", stats["high_risk_count"], "🛡️", "danger",
+                       trend=("Attention" if stats["high_risk_count"] else "Clear"),
+                       trend_dir=("down" if stats["high_risk_count"] else "up"),
+                       foot="Score ≥ 60"),
+        theme.kpi_card("Expiring ≤30d", stats["expiring_soon"], "⏳", "warning", foot="Active contracts"),
+        theme.kpi_card("Avg Risk Score", avg_risk, "📊", "violet", foot=risk_band),
+        theme.kpi_card("Open Obligations", obl_stats["total"] - obl_stats["by_status"].get("Completed", 0),
+                       "🗓️", "info", foot=f"{obl_stats['overdue']} overdue"),
+    ]), unsafe_allow_html=True)
 
-    # Expiring contracts alert banner
+    st.write("")
+
+    # Alert banners
+    if obl_stats["overdue"] > 0:
+        st.error(f"**{obl_stats['overdue']} obligation(s) overdue.** Review them in **Obligations & Renewals**.")
     if stats["expiring_soon"] > 0:
         expiring = get_expiring_contracts(contracts_df, 30)
         if not expiring.empty:
-            st.warning(f"**{len(expiring)} contract(s) expiring within 30 days!** Go to **Email Alerts** to notify stakeholders.")
+            st.warning(f"**{len(expiring)} contract(s) expiring within 30 days.** Notify stakeholders via **Email Alerts**.")
 
     if contracts_df.empty:
-        st.info("No contracts in the repository yet. Upload your first contract via **Upload & Review**.")
+        st.markdown(theme.empty_state(
+            "No contracts yet",
+            "Upload your first contract via Upload & Review to unlock analytics, risk scoring and the Contract Copilot.",
+            "📄"), unsafe_allow_html=True)
         return
 
+    st.markdown(theme.section_title("Portfolio Analytics", "📈"), unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
         st.plotly_chart(contracts_by_status_chart(contracts_df), use_container_width=True)
@@ -346,9 +453,11 @@ def render_dashboard():
     with col3:
         st.plotly_chart(risk_score_distribution_chart(contracts_df), use_container_width=True)
     with col4:
-        st.plotly_chart(expiring_contracts_timeline(contracts_df), use_container_width=True)
+        st.plotly_chart(risk_by_type_chart(contracts_df), use_container_width=True)
 
-    st.subheader("Recent Contracts")
+    st.plotly_chart(expiring_contracts_timeline(contracts_df), use_container_width=True)
+
+    st.markdown(theme.section_title("Recent Contracts", "🕒"), unsafe_allow_html=True)
     display_cols = ["filename", "contract_type", "status", "risk_score", "risk_level", "upload_date"]
     available = [c for c in display_cols if c in contracts_df.columns]
     st.dataframe(contracts_df[available].head(10), use_container_width=True)
@@ -1292,8 +1401,10 @@ def render_agents():
     2. **DraftCraft** generates contracts from templates, enhanced with clauses from the **Clause Library**.
     3. **RiskRadar** performs deep risk analysis with automatic **email alerts** for high-risk contracts.
     4. **DiffLens** compares two contracts side-by-side with AI-powered difference analysis.
+    5. **ContractCopilot** answers plain-English questions grounded in a specific contract, citing the exact clause.
 
-    All actions are tracked in the **Audit Trail**. **Bulk Upload** processes multiple files with batch risk scoring.
+    All actions are tracked in the **Audit Trail**. **Bulk Upload** processes multiple files with batch risk scoring,
+    and **Obligations & Renewals** keeps deadlines and commitments on track.
 
     Powered by **OpenAI GPT-4o** on the **Infosys Cobalt** cloud platform.
     """)
@@ -1331,6 +1442,223 @@ def render_user_management_page():
     """)
 
 
+# =====================================================================
+# PAGE: Contract Copilot  (Agent: ContractCopilot) — grounded Q&A
+# =====================================================================
+def render_contract_copilot():
+    st.markdown('<div class="main-header">💬 Contract Copilot</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Ask plain-English questions and get answers grounded in a specific contract — with clause citations</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["ContractCopilot"]["icon"]} ContractCopilot Agent</span><div class="agent-desc">{AGENT_PROFILES["ContractCopilot"]["description"]}</div></div>', unsafe_allow_html=True)
+
+    source = st.radio("Contract source", ["From Repository", "Upload New"], horizontal=True, key="copilot_source")
+    contract_text, contract_name = "", ""
+
+    if source == "From Repository":
+        df = db.load_contracts()
+        if df.empty:
+            st.markdown(theme.empty_state("No contracts to chat with", "Add a contract via Upload & Review first.", "💬"), unsafe_allow_html=True)
+            return
+        sel = st.selectbox("Select a contract", df["filename"].tolist(), key="copilot_sel")
+        idx = df["filename"].tolist().index(sel)
+        contract_text = df.iloc[idx]["full_text"] or ""
+        contract_name = sel
+    else:
+        up = st.file_uploader("Upload a contract", type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "tiff"], key="copilot_up")
+        if up:
+            try:
+                contract_text, _ = _smart_extract(up)
+                contract_name = up.name
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+
+    if not contract_text:
+        st.markdown(theme.empty_state("Select a contract to begin", "Choose a contract to start a grounded conversation.", "💬"), unsafe_allow_html=True)
+        return
+
+    # Reset conversation when the contract changes
+    if st.session_state.get("copilot_ctx") != contract_name:
+        st.session_state["copilot_ctx"] = contract_name
+        st.session_state["copilot_msgs"] = []
+
+    st.caption(f"💬 Chatting with **{contract_name}** — {len(contract_text):,} characters")
+
+    pending_q = None
+    with st.expander("💡 Suggested questions", expanded=not st.session_state.get("copilot_msgs")):
+        sc = st.columns(2)
+        for i, q in enumerate(SUGGESTED_QUESTIONS):
+            if sc[i % 2].button(q, key=f"copilot_sugg_{i}", use_container_width=True):
+                pending_q = q
+
+    # Render conversation
+    for m in st.session_state.get("copilot_msgs", []):
+        with st.chat_message("user"):
+            st.markdown(m["q"])
+        with st.chat_message("assistant"):
+            st.markdown(m["answer"])
+            if m.get("citations"):
+                with st.expander("📌 Cited from the contract"):
+                    for c in m["citations"]:
+                        st.markdown(f"> {c}")
+            conf = m.get("confidence", "—")
+            st.caption(f"Confidence: **{conf}**" + ("" if m.get("found", True) else " · not found in document"))
+
+    typed = st.chat_input("Ask about this contract…")
+    question = pending_q or typed
+    if question:
+        agent = _get_agent("ContractCopilot")
+        history = []
+        for m in st.session_state.get("copilot_msgs", []):
+            history.append({"role": "user", "content": m["q"]})
+            history.append({"role": "assistant", "content": m["answer"]})
+        with st.spinner("ContractCopilot is reading the contract…"):
+            try:
+                res = agent.ask(question, contract_text, history)
+            except Exception as e:
+                st.error(f"Copilot failed: {e}")
+                return
+        st.session_state.setdefault("copilot_msgs", []).append({
+            "q": question,
+            "answer": res.get("answer", ""),
+            "citations": res.get("citations", []) or [],
+            "confidence": res.get("confidence", "—"),
+            "found": res.get("found", True),
+        })
+        log_action(current_user, "AI Q&A", "contract", entity_name=contract_name, details=question[:120])
+        st.rerun()
+
+
+# =====================================================================
+# PAGE: Obligations & Renewals
+# =====================================================================
+def render_obligations():
+    st.markdown('<div class="main-header">✅ Obligations & Renewals</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Track contractual obligations, owners and deadlines — and stay ahead of renewals</div>', unsafe_allow_html=True)
+
+    stats = db.get_obligation_stats()
+    completed = stats["by_status"].get("Completed", 0)
+    st.markdown(theme.kpi_row([
+        theme.kpi_card("Total Obligations", stats["total"], "🗂️", "cobalt"),
+        theme.kpi_card("Open / In Progress", stats["total"] - completed, "🔓", "info"),
+        theme.kpi_card("Overdue", stats["overdue"], "⚠️", "danger",
+                       trend=("Action needed" if stats["overdue"] else "On track"),
+                       trend_dir=("down" if stats["overdue"] else "up")),
+        theme.kpi_card("Due ≤30 days", stats["due_soon"], "⏳", "warning"),
+        theme.kpi_card("Completed", completed, "✅", "success"),
+    ]), unsafe_allow_html=True)
+    st.write("")
+
+    tab1, tab2, tab3 = st.tabs(["📋 Obligation Register", "🔁 Renewals Calendar", "➕ Add / Import"])
+
+    # ---- Register ----
+    with tab1:
+        obls = db.load_obligations()
+        if obls.empty:
+            st.markdown(theme.empty_state("No obligations tracked yet", "Add obligations manually or import them from a contract in the Add / Import tab.", "🗂️"), unsafe_allow_html=True)
+        else:
+            from datetime import datetime as _dt
+            today = _dt.now().date().isoformat()
+            for _, row in obls.iterrows():
+                overdue = row["due_date"] and row["due_date"] < today and row["status"] != "Completed"
+                flag = "🔴 " if overdue else ""
+                due_txt = row["due_date"] or "No due date"
+                with st.expander(f"{flag}{row['description'][:80]}  —  {row['contract_name'] or 'General'}"):
+                    meta = f"{theme.status_pill(row['status'])} &nbsp; {theme.status_pill(row['priority'])}"
+                    st.markdown(meta, unsafe_allow_html=True)
+                    st.write(f"**Owner:** {row['owner'] or '—'}  |  **Due:** {due_txt}"
+                             + ("  🔴 **OVERDUE**" if overdue else ""))
+                    st.write(f"**Contract:** {row['contract_name'] or 'General'}")
+                    if check_permission(current_user, "analyst"):
+                        c1, c2 = st.columns([2, 1])
+                        with c1:
+                            new_status = st.selectbox("Update status", ["Open", "In Progress", "Completed"],
+                                                      index=["Open", "In Progress", "Completed"].index(row["status"]) if row["status"] in ["Open", "In Progress", "Completed"] else 0,
+                                                      key=f"ost_{row['id']}")
+                            if new_status != row["status"]:
+                                db.update_obligation_status(row["id"], new_status)
+                                st.rerun()
+                        with c2:
+                            st.write("")
+                            st.write("")
+                            if st.button("Delete", key=f"odel_{row['id']}"):
+                                db.delete_obligation(row["id"])
+                                st.rerun()
+
+    # ---- Renewals ----
+    with tab2:
+        contracts_df = db.load_contracts()
+        days = st.slider("Renewal window (days)", 7, 180, 60, key="renew_days")
+        expiring = get_expiring_contracts(contracts_df, days)
+        if expiring.empty:
+            st.success(f"No contracts expiring within {days} days. 🎉")
+        else:
+            st.warning(f"**{len(expiring)}** contract(s) expiring within {days} days")
+            st.plotly_chart(expiring_contracts_timeline(contracts_df), use_container_width=True)
+            cols = [c for c in ["filename", "contract_type", "expiration_date", "status", "risk_score"] if c in expiring.columns]
+            st.dataframe(expiring[cols], use_container_width=True)
+
+    # ---- Add / Import ----
+    with tab3:
+        if not check_permission(current_user, "analyst"):
+            st.warning("You need **Analyst** or **Admin** role to add obligations.")
+            return
+
+        contracts_df = db.load_contracts()
+        contract_names = ["General (no contract)"] + (contracts_df["filename"].tolist() if not contracts_df.empty else [])
+
+        st.markdown(theme.section_title("Add an obligation", "➕"), unsafe_allow_html=True)
+        with st.form("add_obl_form"):
+            c1, c2 = st.columns(2)
+            with c1:
+                oc = st.selectbox("Contract", contract_names)
+                odesc = st.text_area("Obligation*", height=80, placeholder="e.g., Deliver quarterly compliance report")
+                oowner = st.text_input("Owner / responsible party")
+            with c2:
+                odue = st.date_input("Due date", value=date.today())
+                oprio = st.selectbox("Priority", ["High", "Medium", "Low"], index=1)
+                ostatus = st.selectbox("Status", ["Open", "In Progress", "Completed"])
+            if st.form_submit_button("Add Obligation", type="primary"):
+                if odesc.strip():
+                    cid = ""
+                    cname = "" if oc.startswith("General") else oc
+                    if cname and not contracts_df.empty:
+                        cid = contracts_df[contracts_df["filename"] == cname].iloc[0]["id"]
+                    db.add_obligation(cid, cname, odesc.strip(), oowner, str(odue), oprio, ostatus)
+                    st.success("Obligation added!")
+                    st.rerun()
+                else:
+                    st.error("Obligation description is required.")
+
+        st.divider()
+        st.markdown(theme.section_title("Import obligations from a contract", "🤖"), unsafe_allow_html=True)
+        st.caption("Pull obligations that ClauseScout already extracted from a saved contract.")
+        if contracts_df.empty:
+            st.info("No saved contracts to import from yet.")
+        else:
+            imp = st.selectbox("Select contract", contracts_df["filename"].tolist(), key="obl_import_sel")
+            row = contracts_df[contracts_df["filename"] == imp].iloc[0]
+            elements = row.get("extracted_elements", "{}")
+            try:
+                parsed = json.loads(elements) if isinstance(elements, str) else (elements or {})
+            except (json.JSONDecodeError, TypeError):
+                parsed = {}
+            obligations = parsed.get("obligations", []) if isinstance(parsed, dict) else []
+            due_default = parsed.get("expiration_date", "") if isinstance(parsed, dict) else ""
+            st.write(f"Found **{len(obligations)}** extracted obligation(s).")
+            if obligations and st.button("Import these obligations", type="primary"):
+                n = 0
+                for o in obligations:
+                    if isinstance(o, dict):
+                        desc = o.get("obligation", "") or o.get("description", "")
+                        owner = o.get("party", "")
+                    else:
+                        desc, owner = str(o), ""
+                    if desc:
+                        db.add_obligation(row["id"], imp, desc, owner, due_default if isinstance(due_default, str) else "", "Medium", "Open")
+                        n += 1
+                st.success(f"Imported {n} obligation(s) from {imp}!")
+                st.rerun()
+
+
 # ---------------------------------------------------------------------------
 # Page routing
 # ---------------------------------------------------------------------------
@@ -1348,6 +1676,10 @@ elif page == "⚖️ Contract Comparison":
     render_comparison()
 elif page in ("📁 Contract Repository", "📁 Repository"):
     render_repository()
+elif page == "💬 Contract Copilot":
+    render_contract_copilot()
+elif page == "✅ Obligations & Renewals":
+    render_obligations()
 elif page == "📚 Clause Library":
     render_clause_library()
 elif page == "📧 Email Alerts":

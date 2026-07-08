@@ -58,6 +58,19 @@ CREATE TABLE IF NOT EXISTS comparisons (
     comparison_json TEXT,
     created_at TEXT
 );
+
+CREATE TABLE IF NOT EXISTS obligations (
+    id TEXT PRIMARY KEY,
+    contract_id TEXT,
+    contract_name TEXT,
+    description TEXT,
+    owner TEXT,
+    due_date TEXT,
+    priority TEXT DEFAULT 'Medium',
+    status TEXT DEFAULT 'Open',
+    created_at TEXT,
+    updated_at TEXT
+);
 """
 
 
@@ -177,6 +190,55 @@ def save_comparison(contract_a_id: str, contract_b_id: str, comparison: dict) ->
             (comp_id, contract_a_id, contract_b_id, json.dumps(comparison), now),
         )
     return comp_id
+
+
+def add_obligation(contract_id: str, contract_name: str, description: str,
+                   owner: str = "", due_date: str = "", priority: str = "Medium",
+                   status: str = "Open") -> str:
+    obl_id = str(uuid.uuid4())
+    now = datetime.now().isoformat()
+    with _get_conn() as conn:
+        conn.execute(
+            """INSERT INTO obligations
+            (id, contract_id, contract_name, description, owner, due_date,
+             priority, status, created_at, updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (obl_id, contract_id, contract_name, description, owner, due_date,
+             priority, status, now, now),
+        )
+    return obl_id
+
+
+def load_obligations() -> pd.DataFrame:
+    with _get_conn() as conn:
+        return pd.read_sql_query(
+            "SELECT * FROM obligations ORDER BY (due_date = '') ASC, due_date ASC", conn)
+
+
+def update_obligation_status(obl_id: str, status: str):
+    with _get_conn() as conn:
+        conn.execute("UPDATE obligations SET status=?, updated_at=? WHERE id=?",
+                     (status, datetime.now().isoformat(), obl_id))
+
+
+def delete_obligation(obl_id: str):
+    with _get_conn() as conn:
+        conn.execute("DELETE FROM obligations WHERE id=?", (obl_id,))
+
+
+def get_obligation_stats() -> dict:
+    with _get_conn() as conn:
+        total = conn.execute("SELECT COUNT(*) FROM obligations").fetchone()[0]
+        by_status = dict(conn.execute(
+            "SELECT status, COUNT(*) FROM obligations GROUP BY status").fetchall())
+        overdue = conn.execute(
+            "SELECT COUNT(*) FROM obligations WHERE due_date != '' "
+            "AND due_date < date('now') AND status != 'Completed'").fetchone()[0]
+        due_soon = conn.execute(
+            "SELECT COUNT(*) FROM obligations WHERE due_date != '' "
+            "AND due_date >= date('now') AND due_date <= date('now','+30 days') "
+            "AND status != 'Completed'").fetchone()[0]
+    return {"total": total, "by_status": by_status, "overdue": overdue, "due_soon": due_soon}
 
 
 def get_dashboard_stats() -> dict:

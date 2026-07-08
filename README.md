@@ -14,6 +14,7 @@ Improve productivity of document reviews by identifying key elements, generating
 | **DraftCraft** | Generates professionally structured contracts from templates with AI customization and clause library integration |
 | **RiskRadar** | Evaluates contracts for risky clauses, compliance gaps, and missing protections with email alerts |
 | **DiffLens** | Compares two contracts side-by-side with AI-powered difference analysis |
+| **ContractCopilot** | Answers plain-English questions grounded in a specific contract, citing the exact clause it relied on |
 
 ## Features
 
@@ -22,10 +23,15 @@ Improve productivity of document reviews by identifying key elements, generating
 - **Draft Generation** — Generate contracts from 6 templates (NDA, MSA, SOW, Employment, Vendor, Lease) with clause library
 - **Risk Analysis** — Score contracts 0-100 with detailed risk breakdown and recommendations
 - **Contract Comparison** — Side-by-side AI comparison of two contracts
-- **Dashboard** — Portfolio overview with KPIs, charts, and expiration tracking
+- **Dashboard** — Portfolio overview with enterprise KPI cards, analytics charts, and expiration tracking
 - **Contract Repository** — Search, filter, and manage all contracts with metadata
 
-### New Enhancements
+### Contract Intelligence (new)
+- **Contract Copilot** — Conversational, grounded Q&A over any contract with clause-level citations and confidence — the "chat with your contract" experience expected of a modern CLM
+- **Obligations & Renewals** — Obligation register with owner, due date, priority and status tracking; auto-import obligations extracted by ClauseScout; and a portfolio renewals calendar with overdue / due-soon signals
+
+### Platform
+- **Enterprise UI** — Cohesive design system (`utils/theme.py`): KPI stat cards, section headers, status/risk pills, consistent Plotly theming, active-state navigation, and an immersive animated login page
 - **OCR Support** — Tesseract-based OCR for scanned/image-based PDFs and standalone images (PNG, JPG, TIFF)
 - **Multi-User Authentication** — Role-based access (Admin, Analyst, Viewer) with streamlit-authenticator
 - **Email Alerts** — SMTP-based notifications for expiring contracts and high-risk alerts
