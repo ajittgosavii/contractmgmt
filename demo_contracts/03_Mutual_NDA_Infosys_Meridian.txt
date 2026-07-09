@@ -1,0 +1,45 @@
+MUTUAL NON-DISCLOSURE AGREEMENT
+
+This Mutual Non-Disclosure Agreement ("Agreement") is made effective as of June 15, 2026 ("Effective Date") between INFOSYS LIMITED, having an office at Electronics City, Hosur Road, Bengaluru, Karnataka 560100, India ("Infosys"), and MERIDIAN HEALTH SYSTEMS INC., having an office at 700 Boylston Street, Boston, Massachusetts 02116, USA ("Meridian"). Each may act as a "Disclosing Party" or "Receiving Party."
+
+RECITAL
+The Parties wish to explore a potential business relationship concerning an AI-enabled clinical data platform (the "Purpose") and, in connection therewith, may disclose Confidential Information to one another.
+
+1. CONFIDENTIAL INFORMATION
+1.1 "Confidential Information" means any non-public information disclosed by one Party to the other, whether orally, in writing, or electronically, that is marked confidential or that a reasonable person would understand to be confidential, including business plans, technical data, pricing, patient-related data, source code, and roadmaps.
+1.2 Confidential Information does not include information that: (a) is or becomes public through no fault of the Receiving Party; (b) was known to the Receiving Party without restriction before disclosure; (c) is independently developed without use of the Confidential Information; or (d) is rightfully received from a third party without duty of confidentiality.
+
+2. OBLIGATIONS OF THE RECEIVING PARTY
+2.1 The Receiving Party shall: (a) use the Confidential Information solely for the Purpose; (b) protect it using at least the same degree of care it uses for its own confidential information and no less than reasonable care; and (c) limit access to employees and advisors with a need to know who are bound by confidentiality obligations at least as protective as this Agreement.
+2.2 The Receiving Party shall not reverse engineer, decompile, or disassemble any materials disclosed.
+
+3. COMPELLED DISCLOSURE
+3.1 The Receiving Party may disclose Confidential Information to the extent required by law or court order, provided it gives prompt written notice (where legally permitted) and reasonable assistance to allow the Disclosing Party to seek a protective order.
+
+4. TERM
+4.1 This Agreement commences on the Effective Date and continues for three (3) years, expiring on June 14, 2029, unless earlier terminated by either Party on thirty (30) days written notice. Confidentiality obligations survive for three (3) years following disclosure of the relevant Confidential Information.
+
+5. RETURN OR DESTRUCTION
+5.1 Upon written request or termination, the Receiving Party shall promptly return or destroy all Confidential Information and certify such destruction in writing, except for one archival copy retained for legal compliance and copies in routine backups.
+
+6. NO LICENSE; NO WARRANTY
+6.1 No license or ownership right is granted by this Agreement. All Confidential Information is provided "as is" without warranty. Each Party retains ownership of its own Confidential Information.
+
+7. NO OBLIGATION
+7.1 Nothing in this Agreement obligates either Party to proceed with any transaction. This Agreement does not create a partnership, joint venture, or agency relationship.
+
+8. REMEDIES
+8.1 The Parties agree that a breach may cause irreparable harm for which monetary damages are inadequate, and the non-breaching Party shall be entitled to seek injunctive relief in addition to other remedies.
+
+9. GOVERNING LAW
+9.1 This Agreement shall be governed by the laws of the State of New York, without regard to conflict-of-laws rules. The Parties consent to the exclusive jurisdiction of the state and federal courts located in New York County, New York.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the Effective Date.
+
+INFOSYS LIMITED
+By: Anil Kapoor, Associate Vice President
+Date: June 15, 2026
+
+MERIDIAN HEALTH SYSTEMS INC.
+By: Sarah Whitfield, General Counsel
+Date: June 15, 2026

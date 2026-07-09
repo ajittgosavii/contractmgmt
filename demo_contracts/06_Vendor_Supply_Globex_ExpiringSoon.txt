@@ -1,0 +1,55 @@
+VENDOR SUPPLY AGREEMENT
+
+This Vendor Supply Agreement ("Agreement") is entered into as of August 1, 2024 ("Effective Date") between GLOBEX COMPONENTS LTD., with its registered office at Plot 12, Whitefield Industrial Area, Bengaluru 560066, India ("Supplier"), and ORION DEVICES PRIVATE LIMITED, with its office at Cyber Towers, HITEC City, Hyderabad 500081, India ("Buyer").
+
+1. SUPPLY OF GOODS
+1.1 Supplier shall manufacture and supply the electronic components described in Schedule A ("Goods") in accordance with the specifications, quantities, and delivery dates set out in each purchase order accepted by Supplier.
+1.2 Buyer shall issue rolling forecasts monthly. Accepted purchase orders are binding.
+
+2. TERM AND RENEWAL
+2.1 This Agreement commences on the Effective Date and continues for an initial term of two (2) years, expiring on July 31, 2026, unless renewed by mutual written agreement of the Parties.
+2.2 The Parties intend to negotiate renewal terms before expiration. If no renewal is executed, the Agreement expires and no further purchase orders shall be placed.
+
+3. PRICING AND PAYMENT
+3.1 Prices are set out in Schedule A and are fixed for the initial term. All amounts are stated in Indian Rupees (INR).
+3.2 Supplier shall invoice on shipment. Payment is due within forty-five (45) days of the invoice date (Net 45).
+3.3 Buyer may withhold payment for Goods that are rejected as non-conforming pending resolution.
+
+4. DELIVERY AND TITLE
+4.1 Delivery shall be DDP (Delivered Duty Paid) to Buyer's Hyderabad facility per Incoterms 2020.
+4.2 Title and risk of loss pass to Buyer upon delivery and acceptance.
+
+5. QUALITY AND WARRANTY
+5.1 Supplier warrants that the Goods shall conform to specifications, be free from defects in materials and workmanship for eighteen (18) months from delivery, and comply with applicable RoHS and safety regulations.
+5.2 Buyer may inspect and reject non-conforming Goods within fifteen (15) days of delivery. Supplier shall, at its option, repair, replace, or refund rejected Goods.
+
+6. LATE DELIVERY PENALTY
+6.1 If Supplier fails to deliver accepted purchase orders by the agreed delivery date, Supplier shall pay liquidated damages of 0.5% of the value of the delayed Goods per week of delay, up to a maximum of 5% of the value of the affected purchase order.
+
+7. OBLIGATIONS
+7.1 Supplier shall: (a) maintain sufficient production capacity; (b) provide certificates of conformance with each shipment; and (c) notify Buyer at least sixty (60) days before any change to component design or materials.
+7.2 Buyer shall: (a) provide accurate forecasts; (b) accept and pay for conforming Goods; and (c) provide any Buyer-supplied materials on time.
+
+8. INDEMNIFICATION AND LIABILITY
+8.1 Supplier shall indemnify Buyer against third-party claims arising from defective Goods or infringement of intellectual property by the Goods.
+8.2 Except for indemnification obligations and breaches of warranty, each Party's aggregate liability is limited to the total amounts paid under the affected purchase orders in the preceding twelve (12) months.
+
+9. TERMINATION
+9.1 Either Party may terminate for material breach uncured within thirty (30) days of written notice, or immediately upon the other Party's insolvency.
+9.2 Buyer may terminate for convenience on sixty (60) days notice, subject to accepting Goods already in production.
+
+10. GOVERNING LAW
+10.1 This Agreement is governed by the laws of India, and the courts of Bengaluru, Karnataka shall have exclusive jurisdiction. Disputes shall be referred to arbitration under the Arbitration and Conciliation Act, 1996, seated in Bengaluru.
+
+11. FORCE MAJEURE
+11.1 Neither Party is liable for failure or delay due to events beyond its reasonable control, provided prompt notice is given and reasonable efforts are made to resume performance.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the Effective Date.
+
+GLOBEX COMPONENTS LTD.
+By: Vikram Reddy, Director of Sales
+Date: August 1, 2024
+
+ORION DEVICES PRIVATE LIMITED
+By: Meera Krishnan, Head of Supply Chain
+Date: August 1, 2024

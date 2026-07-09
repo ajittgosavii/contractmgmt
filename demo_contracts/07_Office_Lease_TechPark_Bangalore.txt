@@ -1,0 +1,53 @@
+COMMERCIAL OFFICE LEASE AGREEMENT
+
+This Commercial Office Lease Agreement ("Lease") is made and entered into on October 1, 2025 ("Commencement Date") between PRESTIGE TECH PARK LLP, owner of the premises located at Tower C, Prestige Tech Park, Outer Ring Road, Marathahalli, Bengaluru 560103, India ("Landlord"), and QUANTIVA SOFTWARE INDIA PRIVATE LIMITED ("Tenant").
+
+1. PREMISES
+1.1 The Landlord leases to the Tenant approximately 24,000 square feet of office space on the 7th floor of Tower C (the "Premises"), together with the right to use 40 designated car parking spaces and common areas.
+
+2. TERM
+2.1 The term of this Lease is five (5) years, commencing on the Commencement Date and expiring on September 30, 2030 ("Expiration Date").
+2.2 The Tenant has a lock-in period of thirty-six (36) months. The Tenant may renew for an additional five (5) year term by providing written notice at least six (6) months before the Expiration Date, on terms to be mutually agreed.
+
+3. RENT AND ESCALATION
+3.1 The monthly base rent is INR 21,60,000 (Indian Rupees Twenty-One Lakh Sixty Thousand), calculated at INR 90 per square foot per month.
+3.2 Rent is payable monthly in advance by the fifth (5th) day of each calendar month.
+3.3 ESCALATION: The base rent shall increase by five percent (5%) every twelve (12) months on each anniversary of the Commencement Date.
+3.4 The Tenant shall also pay Common Area Maintenance (CAM) charges of INR 12 per square foot per month, subject to annual revision based on actual costs.
+
+4. SECURITY DEPOSIT
+4.1 The Tenant shall deposit a refundable, interest-free security deposit equal to ten (10) months' base rent, i.e., INR 2,16,00,000, refundable within sixty (60) days of vacating the Premises, less lawful deductions.
+
+5. USE OF PREMISES
+5.1 The Premises shall be used solely for lawful office and software-development purposes and for no other purpose without the Landlord's prior written consent.
+
+6. MAINTENANCE AND OBLIGATIONS
+6.1 The Landlord shall maintain the building structure, elevators, common areas, and base building services.
+6.2 The Tenant shall maintain the interior of the Premises, keep it in good condition, and comply with building rules and applicable laws.
+6.3 The Tenant shall obtain and maintain property and public-liability insurance for its assets and operations within the Premises.
+
+7. UTILITIES
+7.1 The Tenant shall pay for electricity and other utilities consumed within the Premises based on separate metering. Power backup (DG) charges shall be billed on actuals.
+
+8. ASSIGNMENT AND SUBLETTING
+8.1 The Tenant shall not assign this Lease or sublet the Premises without the Landlord's prior written consent, except to an affiliate of the Tenant upon prior written notice.
+
+9. TERMINATION
+9.1 After the lock-in period, either Party may terminate this Lease by providing six (6) months' prior written notice.
+9.2 The Landlord may terminate for non-payment of rent that remains unpaid for thirty (30) days after written notice, or for material breach uncured within thirty (30) days.
+
+10. FORCE MAJEURE
+10.1 Neither Party shall be liable for failure to perform due to events beyond its reasonable control, including natural disasters, government action, or civil unrest.
+
+11. GOVERNING LAW AND DISPUTE RESOLUTION
+11.1 This Lease shall be governed by the laws of India. The courts at Bengaluru shall have exclusive jurisdiction. Disputes shall be resolved by arbitration under the Arbitration and Conciliation Act, 1996, seated at Bengaluru.
+
+IN WITNESS WHEREOF, the Parties have executed this Lease on the date first written above.
+
+PRESTIGE TECH PARK LLP
+By: Suresh Menon, Managing Partner
+Date: October 1, 2025
+
+QUANTIVA SOFTWARE INDIA PRIVATE LIMITED
+By: Kavya Iyer, Director of Administration
+Date: October 1, 2025

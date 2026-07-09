@@ -1,0 +1,48 @@
+SOFTWARE-AS-A-SERVICE SUBSCRIPTION AGREEMENT
+
+This Software-as-a-Service Subscription Agreement ("Agreement") is made effective August 21, 2024 ("Effective Date") between NIMBUS ANALYTICS LLC ("Vendor"), located at 88 Sunset Tower, Austin, Texas 78701, and RIVERSTONE FINANCIAL GROUP ("Customer"), located at 22 Canary Wharf, London, United Kingdom.
+
+1. SUBSCRIPTION AND TERM
+1.1 Vendor grants Customer a non-exclusive, non-transferable right to access the Nimbus Analytics platform (the "Service") during the Subscription Term.
+1.2 The initial Subscription Term is twenty-four (24) months, commencing on the Effective Date and expiring on August 20, 2026.
+1.3 AUTOMATIC RENEWAL. This Agreement shall automatically renew for successive twenty-four (24) month terms unless Customer delivers written notice of non-renewal no later than ninety (90) days before the end of the then-current term. Notice provided fewer than ninety (90) days before expiration shall be void and the Agreement shall renew in full.
+
+2. FEES
+2.1 Customer shall pay an annual subscription fee of USD 240,000, invoiced annually in advance. Payment is due within fifteen (15) days of the invoice date.
+2.2 PRICE CHANGES. Vendor may increase the subscription fee at any time and in any amount upon thirty (30) days notice, effective immediately upon the next invoice, including during a renewal term.
+2.3 All fees are non-refundable under all circumstances, including termination for any reason. No credits shall be issued for unused portions of the Service.
+2.4 Late payments accrue interest at 3% per month and Vendor may suspend the Service without notice for any overdue amount.
+
+3. DATA
+3.1 Customer grants Vendor a perpetual, irrevocable, worldwide, royalty-free license to use, reproduce, modify, and create derivative works from all data submitted to the Service ("Customer Data"), including after termination, for any purpose including product development and resale of aggregated insights.
+3.2 Vendor may retain and continue to use Customer Data indefinitely following termination. Vendor is under no obligation to delete or return Customer Data.
+3.3 The Agreement contains no data processing addendum and no reference to GDPR, UK GDPR, or CCPA obligations. Vendor makes no commitment regarding the geographic location of data storage.
+
+4. SERVICE LEVELS
+4.1 The Service is provided "AS IS" and "AS AVAILABLE" without any warranty of uptime, availability, accuracy, or fitness for a particular purpose. Vendor does not commit to any service level and shall have no liability for downtime.
+
+5. INDEMNIFICATION
+5.1 Customer shall defend, indemnify, and hold harmless Vendor and its affiliates, officers, and agents from and against any and all claims, damages, losses, and expenses (including attorneys' fees) arising out of or related to Customer's use of the Service, Customer Data, or this Agreement. Vendor provides no indemnification of any kind to Customer.
+
+6. LIMITATION OF LIABILITY
+6.1 CUSTOMER'S LIABILITY UNDER THIS AGREEMENT IS UNLIMITED. VENDOR'S TOTAL AGGREGATE LIABILITY, IF ANY, SHALL NOT EXCEED ONE HUNDRED U.S. DOLLARS (USD 100), REGARDLESS OF THE FORM OF ACTION OR THEORY OF LIABILITY.
+
+7. TERMINATION
+7.1 Vendor may terminate or suspend this Agreement and Customer's access at any time, for any reason or no reason, with or without notice.
+7.2 Customer may terminate only for Vendor's material, uncured breach after providing sixty (60) days written notice and a sixty (60) day cure period, and remains liable for all fees for the remainder of the then-current term.
+
+8. GOVERNING LAW
+8.1 This Agreement is governed exclusively by the laws of the State of Texas, and Customer irrevocably consents to the exclusive jurisdiction of the state and federal courts located in Travis County, Texas, waiving any objection based on inconvenient forum. Customer waives any right to a jury trial and to participate in any class action.
+
+9. ENTIRE AGREEMENT
+9.1 Vendor may modify the terms of this Agreement at any time by posting an updated version to its website, and continued use of the Service constitutes acceptance of the modified terms.
+
+ACCEPTED AND AGREED:
+
+NIMBUS ANALYTICS LLC
+By: Chad Bellamy, Chief Revenue Officer
+Date: August 21, 2024
+
+RIVERSTONE FINANCIAL GROUP
+By: Priya Nair, Head of Procurement
+Date: August 21, 2024

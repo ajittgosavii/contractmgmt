@@ -1,0 +1,76 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement ("Agreement") is entered into and made effective as of March 1, 2025 (the "Effective Date") by and between:
+
+ACME MANUFACTURING CORPORATION, a Delaware corporation with its principal place of business at 400 Industrial Parkway, Wilmington, Delaware 19801 ("Client"); and
+
+CLOUDSCALE SOLUTIONS INC., a California corporation with its principal place of business at 1200 Market Street, Suite 900, San Francisco, California 94103 ("Provider").
+
+Client and Provider are each a "Party" and collectively the "Parties."
+
+RECITALS
+
+WHEREAS, Provider is engaged in the business of providing cloud infrastructure, managed services, and professional consulting; and
+
+WHEREAS, Client desires to engage Provider to provide such services pursuant to one or more Statements of Work executed under this Agreement.
+
+NOW, THEREFORE, in consideration of the mutual covenants set forth herein, the Parties agree as follows:
+
+1. TERM AND RENEWAL
+1.1 This Agreement shall commence on the Effective Date and continue for an initial term of two (2) years, expiring on February 28, 2027 (the "Initial Term"), unless earlier terminated in accordance with Section 9.
+1.2 Following the Initial Term, this Agreement may be renewed for successive one (1) year terms only upon the mutual written agreement of both Parties executed at least thirty (30) days prior to expiration. This Agreement does not renew automatically.
+
+2. SERVICES
+2.1 Provider shall perform the services described in each Statement of Work ("SOW") executed by the Parties. Each SOW shall reference this Agreement and set out the scope, deliverables, timeline, and fees.
+2.2 Provider shall perform all Services in a professional and workmanlike manner consistent with generally accepted industry standards.
+
+3. FEES AND PAYMENT
+3.1 Client shall pay Provider the fees set forth in each applicable SOW.
+3.2 Provider shall invoice Client monthly in arrears. Payment is due within thirty (30) (Net 30) days of the invoice date.
+3.3 All fees are stated in United States Dollars (USD). Undisputed amounts not paid when due shall accrue interest at 1.0% per month.
+3.4 Provider shall not increase rates during any term without at least sixty (60) days prior written notice, and any increase shall not exceed five percent (5%) per annum.
+
+4. OBLIGATIONS OF THE PARTIES
+4.1 Provider shall: (a) provide qualified personnel; (b) maintain the availability of hosted services at 99.9% measured monthly; (c) comply with all applicable laws; and (d) maintain commercially reasonable information-security controls aligned to ISO 27001.
+4.2 Client shall: (a) provide timely access to systems and information reasonably required; (b) designate a point of contact; and (c) pay all undisputed invoices when due.
+
+5. CONFIDENTIALITY
+5.1 Each Party shall protect the other's Confidential Information with at least the same degree of care it uses for its own, and no less than a reasonable degree of care, and shall use it solely to perform this Agreement. This obligation survives for three (3) years after termination.
+
+6. DATA PROTECTION
+6.1 Provider shall process Client personal data only in accordance with the Data Processing Addendum attached as Exhibit A, and shall comply with GDPR and the California Consumer Privacy Act (CCPA) to the extent applicable.
+6.2 Provider shall notify Client of any confirmed data breach affecting Client data without undue delay and no later than seventy-two (72) hours.
+
+7. INTELLECTUAL PROPERTY
+7.1 Each Party retains ownership of its pre-existing intellectual property. Deliverables created specifically for Client under an SOW shall, upon full payment, be owned by Client, excluding Provider's pre-existing or generally reusable tools and libraries, for which Provider grants Client a perpetual, non-exclusive license.
+
+8. WARRANTIES; INDEMNIFICATION; LIABILITY
+8.1 Each Party warrants that it has the authority to enter into this Agreement.
+8.2 Each Party shall indemnify the other against third-party claims arising from its gross negligence, willful misconduct, or breach of confidentiality obligations (mutual indemnification).
+8.3 EXCEPT FOR BREACHES OF CONFIDENTIALITY OR INDEMNIFICATION OBLIGATIONS, EACH PARTY'S TOTAL AGGREGATE LIABILITY SHALL NOT EXCEED THE FEES PAID OR PAYABLE IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM. NEITHER PARTY SHALL BE LIABLE FOR INDIRECT OR CONSEQUENTIAL DAMAGES.
+
+9. TERMINATION
+9.1 Either Party may terminate this Agreement or any SOW for material breach that remains uncured thirty (30) days after written notice.
+9.2 Either Party may terminate for convenience upon ninety (90) days prior written notice, subject to payment for Services performed through the effective date of termination.
+
+10. GOVERNING LAW AND DISPUTE RESOLUTION
+10.1 This Agreement shall be governed by the laws of the State of Delaware, without regard to its conflict-of-laws principles.
+10.2 The Parties shall first attempt to resolve disputes through good-faith negotiation, and thereafter through binding arbitration in Wilmington, Delaware under the rules of the American Arbitration Association.
+
+11. FORCE MAJEURE
+11.1 Neither Party shall be liable for delays or failures caused by events beyond its reasonable control, including acts of God, war, terrorism, pandemic, or failure of the public internet, provided the affected Party gives prompt notice and uses reasonable efforts to mitigate.
+
+12. GENERAL
+12.1 This Agreement, together with all SOWs and exhibits, constitutes the entire agreement and supersedes all prior understandings. Amendments must be in writing and signed by both Parties.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the Effective Date.
+
+ACME MANUFACTURING CORPORATION
+By: Margaret Chen
+Title: Chief Operating Officer
+Date: March 1, 2025
+
+CLOUDSCALE SOLUTIONS INC.
+By: David Okoro
+Title: VP, Client Services
+Date: March 1, 2025

@@ -1,0 +1,52 @@
+STATEMENT OF WORK NO. SOW-2026-014
+
+This Statement of Work ("SOW") is issued under and incorporates the Master Services Agreement dated March 1, 2025 between ACME MANUFACTURING CORPORATION ("Client") and CLOUDSCALE SOLUTIONS INC. ("Provider"). This SOW is effective January 15, 2026 ("SOW Effective Date").
+
+1. PROJECT
+1.1 Project Name: Enterprise Data Platform Migration to AWS.
+1.2 Objective: Migrate Client's on-premises data warehouse (approximately 45 TB across 68 databases) to a modern cloud data platform, with zero data loss and minimal production downtime.
+
+2. TERM
+2.1 This SOW commences on the SOW Effective Date and shall be completed by September 30, 2026 (the "Target Completion Date"), unless extended by written change order.
+
+3. SCOPE AND DELIVERABLES / MILESTONES
+The Provider shall deliver the following milestones. Each milestone is subject to Client acceptance within ten (10) business days.
+
+Milestone 1 — Discovery & Assessment. Deliverable: Current-state assessment, dependency map, and migration runbook. Due: February 13, 2026. Owner: Provider Solution Architect. Payment: USD 60,000.
+
+Milestone 2 — Landing Zone & Foundation. Deliverable: AWS landing zone, networking, security baseline, and IAM guardrails. Due: March 31, 2026. Owner: Provider Cloud Engineering. Payment: USD 90,000.
+
+Milestone 3 — Pilot Migration. Deliverable: Migration of 5 pilot databases with validation report. Due: May 15, 2026. Owner: Provider Migration Lead. Payment: USD 80,000.
+
+Milestone 4 — Full Migration & Cutover. Deliverable: Migration of remaining databases, cutover, and rollback plan executed in a maintenance window. Due: August 29, 2026. Owner: Provider Migration Lead. Payment: USD 180,000.
+
+Milestone 5 — Hypercare & Handover. Deliverable: 30-day hypercare support, knowledge transfer, and operations handbook. Due: September 30, 2026. Owner: Provider Delivery Manager. Payment: USD 40,000.
+
+4. CLIENT RESPONSIBILITIES
+4.1 Client shall: (a) provide read access to source systems by January 22, 2026; (b) make subject-matter experts available for scheduled workshops; (c) approve the maintenance window for cutover at least fifteen (15) days in advance; and (d) review deliverables within the acceptance period.
+
+5. FEES AND PAYMENT
+5.1 The total fixed fee for this SOW is USD 450,000, payable per the milestone schedule above. Provider shall invoice upon Client acceptance of each milestone. Payment terms are Net 30 as set out in the Master Services Agreement.
+5.2 Expenses shall be pre-approved in writing and reimbursed at cost without markup.
+
+6. SERVICE CREDITS / PENALTIES
+6.1 For each business day that Milestone 4 (Full Migration & Cutover) is delivered late due to Provider's fault, Provider shall credit Client USD 2,500 per day, up to a maximum of USD 50,000, as liquidated damages and Client's exclusive remedy for delay.
+
+7. ACCEPTANCE CRITERIA
+7.1 A deliverable is accepted when it meets the criteria stated in this SOW and passes the agreed validation tests. If Client does not provide written acceptance or a detailed list of deficiencies within the acceptance period, the deliverable is deemed accepted.
+
+8. CHANGE CONTROL
+8.1 Any change to scope, timeline, or fees requires a written change order signed by both Parties.
+
+9. GOVERNING TERMS
+9.1 All other terms, including confidentiality, IP ownership, limitation of liability, and governing law, are as set forth in the Master Services Agreement and are incorporated by reference.
+
+ACCEPTED:
+
+ACME MANUFACTURING CORPORATION
+By: Raymond Blake, VP Information Technology
+Date: January 15, 2026
+
+CLOUDSCALE SOLUTIONS INC.
+By: David Okoro, VP Client Services
+Date: January 15, 2026

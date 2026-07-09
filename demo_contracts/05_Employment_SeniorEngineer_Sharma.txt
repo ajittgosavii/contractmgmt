@@ -1,0 +1,49 @@
+EMPLOYMENT AGREEMENT
+
+This Employment Agreement ("Agreement") is made effective as of April 1, 2026 ("Start Date") between NORTHWIND TECHNOLOGIES INC., a company with offices at 500 Congress Avenue, Austin, Texas 78701 (the "Company"), and RAHUL SHARMA, residing at 145 Lakeview Drive, Austin, Texas 78745 (the "Employee").
+
+1. POSITION AND DUTIES
+1.1 The Company employs the Employee as Senior Staff Software Engineer, reporting to the VP of Engineering. The Employee shall perform duties customarily associated with the role and such other reasonable duties as assigned.
+1.2 The Employee shall devote full professional time and attention to the Company and shall not engage in outside employment that conflicts with the Company's interests without prior written consent.
+
+2. COMPENSATION AND BENEFITS
+2.1 Base Salary: The Company shall pay the Employee an annual base salary of USD 195,000, payable in accordance with the Company's standard payroll schedule (semi-monthly), subject to applicable withholdings.
+2.2 Annual Bonus: The Employee is eligible for a discretionary annual performance bonus targeted at twenty percent (20%) of base salary.
+2.3 Equity: Subject to Board approval, the Employee shall be granted 8,000 restricted stock units vesting over four (4) years with a one-year cliff.
+2.4 Benefits: The Employee is eligible for the Company's standard health, dental, vision, and 401(k) benefits, and twenty (20) days of paid time off annually.
+
+3. AT-WILL EMPLOYMENT
+3.1 Employment is "at will" and may be terminated by either the Company or the Employee at any time, with or without cause and with or without notice, subject to Section 6.
+
+4. CONFIDENTIALITY
+4.1 The Employee shall hold in strict confidence all Company confidential and proprietary information, both during and after employment, and shall not use or disclose such information except in the performance of duties for the Company.
+
+5. INTELLECTUAL PROPERTY ASSIGNMENT
+5.1 The Employee agrees that all inventions, works of authorship, and developments conceived or made during employment that relate to the Company's business or result from work performed for the Company are "works made for hire" and are the sole property of the Company. The Employee hereby assigns all right, title, and interest in such inventions to the Company and shall assist in perfecting such rights.
+
+6. RESTRICTIVE COVENANTS
+6.1 Non-Competition: During employment and for twelve (12) months following termination, the Employee shall not, within the United States, directly or indirectly engage in or provide services to any business that competes with the Company's cloud data products.
+6.2 Non-Solicitation: For twelve (12) months following termination, the Employee shall not solicit any Company employee to leave the Company or solicit any Company customer with whom the Employee had material contact.
+6.3 The Employee acknowledges these restrictions are reasonable and necessary to protect the Company's legitimate business interests.
+
+7. SEVERANCE
+7.1 If the Company terminates the Employee without Cause, and subject to the Employee signing a release of claims, the Company shall pay severance equal to three (3) months of base salary.
+
+8. TERMINATION OBLIGATIONS
+8.1 Upon termination, the Employee shall return all Company property, including devices, documents, and access credentials, and shall not retain any copies of Company confidential information.
+
+9. GOVERNING LAW
+9.1 This Agreement is governed by the laws of the State of Texas. Any dispute shall be resolved in the state or federal courts located in Travis County, Texas.
+
+10. ENTIRE AGREEMENT
+10.1 This Agreement constitutes the entire agreement regarding employment and supersedes all prior agreements. Any amendment must be in writing and signed by both Parties.
+
+AGREED AND ACCEPTED:
+
+NORTHWIND TECHNOLOGIES INC.
+By: Elena Vasquez, Chief People Officer
+Date: March 20, 2026
+
+EMPLOYEE
+Rahul Sharma
+Date: March 20, 2026
