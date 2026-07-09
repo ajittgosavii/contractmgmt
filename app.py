@@ -40,6 +40,7 @@ from utils import risk_viz
 from utils import portfolio as pf
 from utils import retrieval
 from utils import redline_apply
+from utils import flow
 from utils.file_parser import extract_text, save_uploaded_file
 from utils.ocr import extract_text_with_ocr
 from utils.config import CONTRACT_TYPES, CONTRACT_STATUSES, UPLOAD_DIR
@@ -356,6 +357,29 @@ def _get_agent(agent_name: str):
         st.warning("Please enter your OpenAI API key in the sidebar.")
         st.stop()
     return AGENT_PROFILES[agent_name]["class"](api_key=st.session_state["api_key"])
+
+
+def _goto(page_label: str):
+    st.session_state["_page"] = page_label
+    st.rerun()
+
+
+def _flow(active: str):
+    """Render the Draft -> Risk -> Redline -> Merge -> Final stepper."""
+    st.markdown(flow.CSS + flow.banner(st.session_state, active), unsafe_allow_html=True)
+
+
+def _flow_next(active: str, hint: str = ""):
+    """Offer the next step in the workflow as an explicit button."""
+    nxt = flow.next_step(st.session_state, active)
+    if not nxt:
+        return
+    label, page = nxt
+    st.divider()
+    if hint:
+        st.caption(hint)
+    if st.button(f"Continue to {label} →", key=f"flow_next_{active}", type="primary"):
+        _goto(page)
 
 
 def _download_stem(contract_type: str) -> str:
@@ -940,6 +964,7 @@ def render_bulk_upload():
 # =====================================================================
 def render_draft_generation():
     st.markdown('<div class="main-header">✍️ Contract Draft Generation</div>', unsafe_allow_html=True)
+    _flow("draft")
     st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["DraftCraft"]["icon"]} DraftCraft Agent</span><div class="agent-desc">{AGENT_PROFILES["DraftCraft"]["description"]}</div></div>', unsafe_allow_html=True)
 
     if not check_permission(current_user, "analyst"):
@@ -1045,12 +1070,16 @@ def render_draft_generation():
                 log_action(current_user, ACTION_EXPORT, "draft", entity_name=contract_type)
                 st.success("Draft saved!")
 
+        _flow_next("draft", "Next, analyse this draft for risk — it will appear there as "
+                            "**Current Draft**, no upload needed.")
+
 
 # =====================================================================
 # PAGE: Risk Analysis  (Agent: RiskRadar)
 # =====================================================================
 def render_risk_analysis():
     st.markdown('<div class="main-header">🛡️ Risk Analysis</div>', unsafe_allow_html=True)
+    _flow("risk")
     st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["RiskRadar"]["icon"]} RiskRadar Agent</span><div class="agent-desc">{AGENT_PROFILES["RiskRadar"]["description"]}</div></div>', unsafe_allow_html=True)
 
     # "Current Draft" closes the loop: draft → risk → redline → merged final draft.
@@ -1204,8 +1233,12 @@ def render_risk_analysis():
                 st.write(f"**[{priority}]** {n.get('point', '')} → _{n.get('suggested_change', '')}_")
 
         st.divider()
-        pdf_bytes = export_risk_report_pdf(result)
-        st.download_button("Download Risk Report (PDF)", pdf_bytes, "risk_report.pdf", "application/pdf")
+        risk_pdf = _try_export(export_risk_report_pdf, "Risk report PDF", result)
+        if risk_pdf:
+            st.download_button("Download Risk Report (PDF)", risk_pdf, "risk_report.pdf",
+                               "application/pdf")
+
+        _flow_next("risk", "Next, turn these risky clauses into redlined language you can send back.")
 
 
 # =====================================================================
@@ -2050,6 +2083,7 @@ def render_portfolio_search():
 # =====================================================================
 def render_redline():
     st.markdown('<div class="main-header">✒️ Redline & Negotiation</div>', unsafe_allow_html=True)
+    _flow("merge" if st.session_state.get("redline_playbook") else "redline")
     st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["RedlinePilot"]["icon"]} RedlinePilot Agent</span><div class="agent-desc">{AGENT_PROFILES["RedlinePilot"]["description"]}</div></div>',
                 unsafe_allow_html=True)
 
