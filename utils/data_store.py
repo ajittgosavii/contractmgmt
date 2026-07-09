@@ -181,6 +181,32 @@ def save_risk_analysis(contract_id: str, analysis: dict) -> str:
     return analysis_id
 
 
+def load_risk_analyses() -> pd.DataFrame:
+    """Every stored risk analysis, newest first."""
+    with _get_conn() as conn:
+        return pd.read_sql_query(
+            "SELECT * FROM risk_analyses ORDER BY created_at DESC", conn)
+
+
+def latest_risk_analyses() -> dict[str, dict]:
+    """The most recent analysis per contract, as {contract_id: analysis_dict}.
+
+    A contract can be re-analysed many times; the portfolio view must reflect
+    only the current assessment, never a stale one.
+    """
+    out: dict[str, dict] = {}
+    with _get_conn() as conn:
+        rows = conn.execute(
+            "SELECT contract_id, analysis_json FROM risk_analyses ORDER BY created_at ASC"
+        ).fetchall()
+    for row in rows:
+        try:
+            out[row["contract_id"]] = json.loads(row["analysis_json"])
+        except (json.JSONDecodeError, TypeError):
+            continue
+    return out
+
+
 def save_comparison(contract_a_id: str, contract_b_id: str, comparison: dict) -> str:
     comp_id = str(uuid.uuid4())
     now = datetime.now().isoformat()

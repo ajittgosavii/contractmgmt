@@ -5,6 +5,7 @@ Powered by OpenAI GPT-4o
 
 import io
 import os
+import html
 import glob
 import zipfile
 import json
@@ -30,8 +31,13 @@ from agents.agent_drafter import ContractDrafterAgent
 from agents.agent_risk import ContractRiskAgent
 from agents.agent_comparator import ContractComparatorAgent
 from agents.agent_qa import ContractQAAgent, SUGGESTED_QUESTIONS
+from agents.agent_redline import ContractRedlineAgent
+from agents.agent_search import PortfolioSearchAgent, SUGGESTED_PORTFOLIO_QUESTIONS
+from agents.agent_playbook import PlaybookComplianceAgent
 from utils import theme
 from utils import risk_viz
+from utils import portfolio as pf
+from utils import retrieval
 from utils.file_parser import extract_text, save_uploaded_file
 from utils.ocr import extract_text_with_ocr
 from utils.config import CONTRACT_TYPES, CONTRACT_STATUSES, UPLOAD_DIR
@@ -49,6 +55,7 @@ from utils.export import (
     export_contract_docx,
     export_risk_report_pdf,
     export_contracts_excel,
+    export_redline_docx,
 )
 from utils.auth import setup_authentication, check_permission, get_user_role, render_user_management
 from utils.audit import log_action, get_audit_log, get_user_activity_summary, get_contract_history
@@ -93,6 +100,21 @@ AGENT_PROFILES = {
         "class": ContractQAAgent,
         "icon": "💬",
         "description": "Conversational contract assistant — answer plain-English questions grounded in a specific contract, with citations to the exact clause it relied on.",
+    },
+    "RedlinePilot": {
+        "class": ContractRedlineAgent,
+        "icon": "✒️",
+        "description": "Negotiation strategist — turns risky clauses into drop-in redlined language, a fallback ladder from ideal to walk-away, and the argument for each position.",
+    },
+    "PortfolioScout": {
+        "class": PortfolioSearchAgent,
+        "icon": "🔎",
+        "description": "Portfolio-wide search — answers a question across every contract at once, grounded in retrieved passages and citing the contract each finding came from.",
+    },
+    "PlaybookGuard": {
+        "class": PlaybookComplianceAgent,
+        "icon": "📐",
+        "description": "Standards reviewer — scores a contract against your approved Clause Library and flags every deviation from the house playbook.",
     },
 }
 
@@ -476,10 +498,16 @@ with st.sidebar:
 
     st.markdown('<div class="nav-section">AI Tools</div>', unsafe_allow_html=True)
     _nav_btn("💬 Contract Copilot", "nav_copilot")
+    _nav_btn("🔎 Portfolio Search", "nav_search")
     _nav_btn("✍️ Draft Generation", "nav_draft")
     _nav_btn("🛡️ Risk Analysis", "nav_risk")
+    _nav_btn("✒️ Redline & Negotiation", "nav_redline")
+    _nav_btn("📐 Playbook Compliance", "nav_playbook")
     _nav_btn("⚖️ Contract Comparison", "nav_compare")
     _nav_btn("📚 Clause Library", "nav_clause")
+
+    st.markdown('<div class="nav-section">Portfolio</div>', unsafe_allow_html=True)
+    _nav_btn("🌡️ Portfolio Risk", "nav_portfolio")
 
     st.markdown('<div class="nav-section">Admin</div>', unsafe_allow_html=True)
     _nav_btn("📧 Email Alerts", "nav_email")
@@ -1815,6 +1843,387 @@ def render_obligations():
                 st.rerun()
 
 
+
+# =====================================================================
+# PAGE: Portfolio Risk  (org-level roll-up of every risk analysis)
+# =====================================================================
+def render_portfolio_risk():
+    st.markdown('<div class="main-header">🌡️ Portfolio Risk</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Where risk is concentrated across every contract you have analysed</div>',
+                unsafe_allow_html=True)
+
+    contracts = db.load_contracts()
+    if contracts.empty:
+        st.markdown(theme.empty_state("No contracts yet",
+                                      "Upload contracts, then run Risk Analysis on them.", "📁"),
+                    unsafe_allow_html=True)
+        return
+
+    analyses = pf.live_analyses(contracts, db.latest_risk_analyses())
+    stats = pf.portfolio_stats(contracts, analyses)
+
+    st.markdown(theme.kpi_row([
+        theme.kpi_card("Contracts analysed", f"{stats['contracts_analysed']}/{stats['contracts_total']}",
+                       "📁", "cobalt", foot=f"{stats['coverage_pct']}% of the portfolio"),
+        theme.kpi_card("Average risk score", stats["avg_score"], "🎯", "info", foot="0–100 across analysed contracts"),
+        theme.kpi_card("Critical clauses", stats["critical"], "🔴", "danger", foot="Highest severity band"),
+        theme.kpi_card("High clauses", stats["high"], "🟠", "warning", foot="Second-highest severity band"),
+        theme.kpi_card("Top risk area", stats["top_risk_type"], "🧭", "violet",
+                       foot=f"Exposure {stats['top_risk_exposure']}"),
+    ]), unsafe_allow_html=True)
+
+    if not analyses:
+        st.info("No contract has been risk-analysed yet. Open **Risk Analysis**, pick a contract "
+                "from the repository and run it — results roll up here automatically.")
+        return
+
+    exposure = pf.build_exposure_frame(contracts, analyses)
+
+    st.plotly_chart(pf.severity_mix_chart(analyses), use_container_width=True)
+    st.plotly_chart(pf.exposure_heatmap(exposure), use_container_width=True)
+
+    left, right = st.columns([1, 1])
+    with left:
+        st.plotly_chart(pf.top_exposures_chart(exposure), use_container_width=True)
+    with right:
+        st.markdown(theme.section_title("Riskiest contracts", "⚠️"), unsafe_allow_html=True)
+        ranked = (exposure.groupby("contract", as_index=False)["exposure"].sum()
+                  .sort_values("exposure", ascending=False).head(10))
+        ranked.columns = ["Contract", "Total exposure"]
+        st.dataframe(ranked, use_container_width=True, hide_index=True)
+
+    with st.expander("Full exposure table (every contract × risk type)"):
+        st.dataframe(exposure.sort_values("exposure", ascending=False),
+                     use_container_width=True, hide_index=True)
+        st.download_button("Download exposure data (Excel)",
+                           export_contracts_excel(exposure), "portfolio_exposure.xlsx",
+                           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+# =====================================================================
+# PAGE: Portfolio Search  (Agent: PortfolioScout)
+# =====================================================================
+@st.cache_resource(show_spinner=False)
+def _build_repo_index(fingerprint: str, api_key: str, use_embeddings: bool):
+    """Cached per (repository fingerprint, embedding mode).
+
+    The fingerprint changes whenever a contract is added, removed or re-uploaded,
+    which is what forces a rebuild — the api_key is only a cache-key component so
+    that switching keys does not silently reuse another key's embeddings.
+    """
+    contracts = db.load_contracts()
+    return retrieval.build_index(contracts, api_key=api_key, use_embeddings=use_embeddings)
+
+
+def _repo_fingerprint(contracts) -> str:
+    if contracts.empty:
+        return "empty"
+    parts = [f"{r['id']}:{len(str(r.get('full_text') or ''))}" for _, r in contracts.iterrows()]
+    return "|".join(sorted(parts))
+
+
+def render_portfolio_search():
+    st.markdown('<div class="main-header">🔎 Portfolio Search</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["PortfolioScout"]["icon"]} PortfolioScout Agent</span><div class="agent-desc">{AGENT_PROFILES["PortfolioScout"]["description"]}</div></div>',
+                unsafe_allow_html=True)
+
+    contracts = db.load_contracts()
+    if contracts.empty:
+        st.markdown(theme.empty_state("No contracts to search",
+                                      "Upload contracts to the repository first.", "📁"),
+                    unsafe_allow_html=True)
+        return
+
+    with_text = contracts[contracts["full_text"].fillna("").str.len() > 0]
+    if with_text.empty:
+        st.warning("Contracts exist but none have extracted text to search.")
+        return
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.caption(f"Searching **{len(with_text)}** contract(s) in the repository.")
+    with col2:
+        semantic = st.toggle("Semantic search", value=bool(st.session_state.get("api_key")),
+                             help="Uses OpenAI embeddings to match meaning, not just words. "
+                                  "Off = keyword (BM25) search, which needs no API key.")
+
+    question = st.text_input("Ask a question across every contract",
+                             placeholder="e.g. Which contracts have uncapped liability?")
+
+    st.caption("Try one of these:")
+    cols = st.columns(3)
+    for i, suggestion in enumerate(SUGGESTED_PORTFOLIO_QUESTIONS[:6]):
+        if cols[i % 3].button(suggestion, key=f"psq_{i}", use_container_width=True):
+            question = suggestion
+            st.session_state["portfolio_question"] = suggestion
+
+    question = question or st.session_state.get("portfolio_question", "")
+
+    if question:
+        api_key = st.session_state.get("api_key", "")
+        use_embeddings = bool(semantic and api_key)
+
+        with st.spinner("Retrieving passages across the repository..."):
+            index = _build_repo_index(_repo_fingerprint(with_text), api_key if use_embeddings else "",
+                                      use_embeddings)
+            hits = index.search(question, top_k=8, api_key=api_key)
+
+        mode = "semantic + keyword" if index.semantic else "keyword (BM25)"
+        st.caption(f"Retrieval mode: **{mode}** · {len(hits)} passage(s) from "
+                   f"{len({h[0].contract_id for h in hits})} contract(s)")
+
+        if not hits:
+            st.info("No passage matched that question. Try different wording.")
+            return
+
+        agent = _get_agent("PortfolioScout")
+        with st.spinner("PortfolioScout is reading the passages..."):
+            try:
+                result = agent.answer(question, hits)
+            except Exception as e:
+                st.error(f"Search failed: {e}")
+                return
+
+        st.divider()
+        st.markdown(f"### {result.get('answer', '')}")
+        confidence = result.get("confidence", "Medium")
+        st.markdown(f"Confidence: {theme.risk_pill(confidence)}", unsafe_allow_html=True)
+        if result.get("caveat"):
+            st.caption(f"⚠️ {result['caveat']}")
+
+        findings = result.get("findings", [])
+        if findings:
+            st.markdown(theme.section_title("Findings by contract", "📄"), unsafe_allow_html=True)
+            for f in findings:
+                icon = {"Favorable": "🟢", "Unfavorable": "🔴"}.get(f.get("assessment"), "⚪")
+                with st.expander(f"{icon} {f.get('contract', 'Contract')} — {f.get('assessment', 'Neutral')}"):
+                    st.write(f.get("finding", ""))
+                    if f.get("quote"):
+                        st.markdown(f"> {f['quote']}")
+
+        with st.expander(f"Retrieved passages ({len(hits)})"):
+            for chunk, score in hits:
+                st.markdown(f"**{chunk.contract_name}** · chunk {chunk.index} · score {score:.4f}")
+                st.caption(chunk.text[:600] + ("…" if len(chunk.text) > 600 else ""))
+
+
+# =====================================================================
+# PAGE: Redline & Negotiation  (Agent: RedlinePilot)
+# =====================================================================
+def render_redline():
+    st.markdown('<div class="main-header">✒️ Redline & Negotiation</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["RedlinePilot"]["icon"]} RedlinePilot Agent</span><div class="agent-desc">{AGENT_PROFILES["RedlinePilot"]["description"]}</div></div>',
+                unsafe_allow_html=True)
+
+    result = st.session_state.get("risk_result")
+    if not result or not result.get("risky_clauses"):
+        st.markdown(theme.empty_state(
+            "Run a risk analysis first",
+            "RedlinePilot builds its positions from the risky clauses that Risk Analysis finds.",
+            "🛡️"), unsafe_allow_html=True)
+        if st.button("Go to Risk Analysis", type="primary"):
+            st.session_state["_page"] = "🛡️ Risk Analysis"
+            st.rerun()
+        return
+
+    risky_clauses = result["risky_clauses"]
+    st.info(f"Building positions from **{len(risky_clauses)}** risky clause(s) "
+            "found by the last risk analysis.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        contract_type = st.selectbox("Contract type", CONTRACT_TYPES, key="redline_type")
+    with col2:
+        our_position = st.selectbox("We are the", ["Customer", "Supplier", "Licensee",
+                                                   "Licensor", "Employer", "Contractor"],
+                                    key="redline_side")
+
+    if st.button("Build Negotiation Playbook", type="primary", use_container_width=True):
+        agent = _get_agent("RedlinePilot")
+        with st.spinner("RedlinePilot is drafting positions..."):
+            try:
+                playbook = agent.build_playbook(risky_clauses, contract_type, our_position)
+                st.session_state["redline_playbook"] = playbook
+                log_action(current_user, ACTION_GENERATE_DRAFT, "contract",
+                           entity_name=f"Negotiation playbook — {contract_type}")
+            except Exception as e:
+                st.error(f"Playbook generation failed: {e}")
+                return
+
+    playbook = st.session_state.get("redline_playbook")
+    if not playbook:
+        return
+
+    st.divider()
+    if playbook.get("negotiation_summary"):
+        st.markdown(theme.section_title("Strategy", "🎯"), unsafe_allow_html=True)
+        st.write(playbook["negotiation_summary"])
+
+    col1, col2 = st.columns(2)
+    with col1:
+        must_win = playbook.get("must_win") or []
+        st.markdown(theme.section_title("Must win", "🔒"), unsafe_allow_html=True)
+        for item in must_win:
+            st.markdown(f"- {item}")
+        if not must_win:
+            st.caption("None identified.")
+    with col2:
+        tradeable = playbook.get("tradeable") or []
+        st.markdown(theme.section_title("Tradeable", "🤝"), unsafe_allow_html=True)
+        for item in tradeable:
+            st.markdown(f"- {item}")
+        if not tradeable:
+            st.caption("None identified.")
+
+    st.markdown(theme.section_title("Clause-by-clause redlines", "✒️"), unsafe_allow_html=True)
+    positions = sorted(playbook.get("positions", []), key=lambda p: p.get("priority", 99))
+    for i, position in enumerate(positions):
+        severity = position.get("severity", "Medium")
+        icon = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🟢"}.get(severity, "⚪")
+        header = (f"{icon} #{position.get('priority', i + 1)} · {position.get('risk_type', 'Clause')} "
+                  f"· leverage: {position.get('leverage', 'Medium')}")
+        with st.expander(header, expanded=(i == 0)):
+            before, after = st.columns(2)
+            with before:
+                st.caption("Current language")
+                st.markdown(f'<div class="redline-before">{html.escape(position.get("original_text", "—"))}</div>',
+                            unsafe_allow_html=True)
+            with after:
+                st.caption("Proposed redline")
+                st.markdown(f'<div class="redline-after">{html.escape(position.get("redlined_text", "—"))}</div>',
+                            unsafe_allow_html=True)
+
+            if position.get("rationale"):
+                st.markdown(f"**Why:** {position['rationale']}")
+
+            ladder = position.get("fallback_ladder") or {}
+            if ladder:
+                l1, l2, l3 = st.columns(3)
+                for col, key, label, tone in ((l1, "ideal", "Ideal", "success"),
+                                              (l2, "acceptable", "Acceptable", "warning"),
+                                              (l3, "walk_away", "Walk away", "danger")):
+                    with col:
+                        st.markdown(theme.kpi_card(label, "", "", tone, foot=ladder.get(key, "—")),
+                                    unsafe_allow_html=True)
+
+            if position.get("counterparty_objection"):
+                st.warning(f"**They will say:** {position['counterparty_objection']}")
+            if position.get("response"):
+                st.success(f"**We respond:** {position['response']}")
+
+    st.divider()
+    st.download_button("Download Negotiation Playbook (DOCX)",
+                       export_redline_docx(playbook, st.session_state.get("redline_type", "Contract")),
+                       "negotiation_playbook.docx",
+                       "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+# =====================================================================
+# PAGE: Playbook Compliance  (Agent: PlaybookGuard)
+# =====================================================================
+def render_playbook_compliance():
+    st.markdown('<div class="main-header">📐 Playbook Compliance</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["PlaybookGuard"]["icon"]} PlaybookGuard Agent</span><div class="agent-desc">{AGENT_PROFILES["PlaybookGuard"]["description"]}</div></div>',
+                unsafe_allow_html=True)
+
+    clauses_df = load_clauses()
+    if clauses_df.empty:
+        st.markdown(theme.empty_state(
+            "Your Clause Library is empty",
+            "PlaybookGuard scores contracts against your approved clauses. Add some first.", "📚"),
+            unsafe_allow_html=True)
+        if st.button("Go to Clause Library", type="primary"):
+            st.session_state["_page"] = "📚 Clause Library"
+            st.rerun()
+        return
+
+    contracts_df = db.load_contracts()
+    if contracts_df.empty:
+        st.info("No contracts in the repository to score.")
+        return
+
+    st.caption(f"Playbook: **{len(clauses_df)}** approved clause(s) in the Clause Library.")
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        selected = st.selectbox("Contract to score", contracts_df["filename"].tolist())
+    with col2:
+        categories = ["All categories"] + sorted(clauses_df["category"].dropna().unique().tolist())
+        category = st.selectbox("Limit playbook to", categories)
+
+    scope = clauses_df if category == "All categories" else clauses_df[clauses_df["category"] == category]
+    if scope.empty:
+        st.warning("No approved clauses in that category.")
+        return
+
+    row = contracts_df[contracts_df["filename"] == selected].iloc[0]
+    contract_text = row.get("full_text") or ""
+    if not contract_text.strip():
+        st.warning("That contract has no extracted text to score.")
+        return
+
+    if st.button(f"Score against {len(scope)} approved clause(s)", type="primary",
+                 use_container_width=True):
+        agent = _get_agent("PlaybookGuard")
+        with st.spinner("PlaybookGuard is comparing against your playbook..."):
+            try:
+                report = agent.score(contract_text, scope.to_dict("records"))
+                st.session_state["playbook_report"] = report
+                log_action(current_user, ACTION_RISK_ANALYSIS, "contract",
+                           entity_id=row["id"], entity_name=f"Playbook compliance — {selected}")
+            except Exception as e:
+                st.error(f"Compliance scoring failed: {e}")
+                return
+
+    report = st.session_state.get("playbook_report")
+    if not report:
+        return
+
+    st.divider()
+    results = report.get("results", [])
+    counts = {status: sum(1 for r in results if r.get("status") == status)
+              for status in ("Compliant", "Deviation", "Missing")}
+
+    st.markdown(theme.kpi_row([
+        theme.kpi_card("Compliance score", f"{report.get('compliance_score', 0)}%", "📐", "cobalt",
+                       foot=report.get("verdict", "")),
+        theme.kpi_card("Compliant", counts["Compliant"], "✅", "success", foot="Matches the playbook"),
+        theme.kpi_card("Deviations", counts["Deviation"], "⚠️", "warning", foot="Different terms"),
+        theme.kpi_card("Missing", counts["Missing"], "❌", "danger", foot="Not addressed at all"),
+    ]), unsafe_allow_html=True)
+
+    if report.get("summary"):
+        st.info(report["summary"])
+
+    st.markdown(theme.section_title("Clause-by-clause", "📋"), unsafe_allow_html=True)
+    status_filter = st.multiselect("Show", ["Compliant", "Deviation", "Missing"],
+                                   default=["Deviation", "Missing"])
+    shown = [r for r in results if r.get("status") in status_filter]
+    if not shown:
+        st.caption("Nothing to show for that filter.")
+
+    for i, item in enumerate(shown):
+        status = item.get("status", "Missing")
+        icon = {"Compliant": "✅", "Deviation": "⚠️", "Missing": "❌"}.get(status, "⚪")
+        with st.expander(f"{icon} {item.get('standard_clause', 'Clause')} — {status}"):
+            st.caption(f"Category: {item.get('category', '—')} · Severity: {item.get('severity', '—')}")
+            if item.get("contract_language"):
+                st.markdown("**In this contract:**")
+                st.markdown(f"> {item['contract_language']}")
+            if item.get("deviation"):
+                st.warning(f"**Deviation:** {item['deviation']}")
+            if item.get("impact"):
+                st.markdown(f"**Impact:** {item['impact']}")
+            if item.get("remediation"):
+                st.success(f"**Remediation:** {item['remediation']}")
+
+    if results:
+        frame = pd.DataFrame(results)
+        st.download_button("Download compliance report (Excel)",
+                           export_contracts_excel(frame), "playbook_compliance.xlsx",
+                           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
 # ---------------------------------------------------------------------------
 # Page routing
 # ---------------------------------------------------------------------------
@@ -1846,3 +2255,11 @@ elif page == "🤖 AI Agents":
     render_agents()
 elif page == "👥 User Management":
     render_user_management_page()
+elif page == "🌡️ Portfolio Risk":
+    render_portfolio_risk()
+elif page == "🔎 Portfolio Search":
+    render_portfolio_search()
+elif page == "✒️ Redline & Negotiation":
+    render_redline()
+elif page == "📐 Playbook Compliance":
+    render_playbook_compliance()

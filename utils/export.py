@@ -94,6 +94,77 @@ def export_contract_docx(contract_text: str, metadata: dict = None) -> bytes:
     return buffer.getvalue()
 
 
+def export_redline_docx(playbook: dict, contract_type: str = "Contract") -> bytes:
+    """Negotiation playbook as a Word document: strike-through original, bold redline."""
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+
+    doc = Document()
+    doc.add_heading(f"Negotiation Playbook - {contract_type}", level=0)
+    doc.add_paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
+    summary = playbook.get("negotiation_summary", "")
+    if summary:
+        doc.add_heading("Strategy", level=1)
+        doc.add_paragraph(summary)
+
+    must_win = playbook.get("must_win") or []
+    tradeable = playbook.get("tradeable") or []
+    if must_win or tradeable:
+        doc.add_heading("Positions at a glance", level=1)
+        if must_win:
+            doc.add_paragraph("Must win:")
+            for item in must_win:
+                doc.add_paragraph(str(item), style="List Bullet")
+        if tradeable:
+            doc.add_paragraph("Tradeable:")
+            for item in tradeable:
+                doc.add_paragraph(str(item), style="List Bullet")
+
+    doc.add_heading("Clause-by-clause redlines", level=1)
+    for position in playbook.get("positions", []):
+        doc.add_heading(f"[{position.get('severity', 'Medium')}] "
+                        f"{position.get('risk_type', 'Clause')}", level=2)
+        doc.add_paragraph(f"Priority: {position.get('priority', '')}    "
+                          f"Leverage: {position.get('leverage', 'Medium')}")
+
+        original = position.get("original_text", "")
+        if original:
+            doc.add_paragraph("Current language:")
+            run = doc.add_paragraph().add_run(original)
+            run.font.strike = True
+            run.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+
+        redline = position.get("redlined_text", "")
+        if redline:
+            doc.add_paragraph("Proposed language:")
+            run = doc.add_paragraph().add_run(redline)
+            run.bold = True
+            run.font.color.rgb = RGBColor(0x00, 0x5A, 0x9C)
+            run.font.size = Pt(11)
+
+        rationale = position.get("rationale", "")
+        if rationale:
+            doc.add_paragraph(f"Why: {rationale}")
+
+        ladder = position.get("fallback_ladder") or {}
+        if ladder:
+            doc.add_paragraph("Fallback ladder:")
+            for key, label in (("ideal", "Ideal"), ("acceptable", "Acceptable"),
+                               ("walk_away", "Walk away")):
+                if ladder.get(key):
+                    doc.add_paragraph(f"{label}: {ladder[key]}", style="List Bullet")
+
+        if position.get("counterparty_objection"):
+            doc.add_paragraph(f"Expected objection: {position['counterparty_objection']}")
+        if position.get("response"):
+            doc.add_paragraph(f"Our response: {position['response']}")
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    return buffer.getvalue()
+
+
 def export_risk_report_pdf(analysis: dict) -> bytes:
     from fpdf import FPDF
 

@@ -203,6 +203,15 @@ div[data-testid="stSidebar"] .stButton > button[kind="primary"] {{
 .ocr-badge {{ background:#FEF3C7; color:#92400E; padding:2px 9px; border-radius:6px; font-size:.72rem; font-weight:700; border:1px solid #FDE68A; }}
 .cobalt-footer {{ text-align:center; font-size:.72rem; color:var(--muted); margin-top:1.2rem; line-height:1.5; }}
 .app-tag {{ font-size:.7rem; color:var(--muted); }}
+
+/* ---- Redline diff panes ---- */
+.redline-before, .redline-after {{
+  font-size:.86rem; line-height:1.6; border-radius:10px; padding:.75rem .9rem;
+  white-space:pre-wrap; min-height:70px; border:1px solid var(--line);
+}}
+.redline-before {{ background:#FEF2F2; border-left:3px solid {DANGER}; color:#7F1D1D;
+  text-decoration:line-through; text-decoration-color:#FCA5A5; }}
+.redline-after {{ background:#F0FDF4; border-left:3px solid {SUCCESS}; color:#14532D; font-weight:500; }}
 </style>
 """
 
