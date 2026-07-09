@@ -12,10 +12,14 @@ Return a JSON object with:
     "risk_level": "Critical" | "High" | "Medium" | "Low",
     "risky_clauses": [
         {
-            "clause_text": "exact or paraphrased clause",
+            "clause_text": "quote the clause VERBATIM from the contract, word for word",
             "risk_type": "e.g., Unlimited Liability, Auto-Renewal, IP Assignment",
             "severity": "Critical" | "High" | "Medium" | "Low",
+            "likelihood": <integer 1-5: 1=Rare, 2=Unlikely, 3=Possible, 4=Likely, 5=Almost certain>,
+            "impact": <integer 1-5: 1=Minor, 2=Moderate, 3=Serious, 4=Major, 5=Severe>,
             "explanation": "why this is risky",
+            "business_impact": "the concrete commercial consequence, quantified where possible",
+            "trigger_scenario": "one sentence: the specific situation that turns this clause into a loss",
             "recommendation": "suggested modification"
         }
     ],
@@ -50,7 +54,13 @@ Return a JSON object with:
 }
 
 Score guide: 1-20 Low risk, 21-40 Medium, 41-60 Medium-High, 61-80 High, 81-100 Critical.
-Be thorough but practical. Focus on commercially significant risks."""
+Be thorough but practical. Focus on commercially significant risks.
+
+Two rules that matter for the UI:
+1. "clause_text" MUST be copied verbatim from the contract so it can be located and
+   highlighted in the source document. Do not summarise or rewrite it.
+2. "likelihood" and "impact" must be integers 1-5 and should be consistent with the
+   severity you assign (Critical clauses carry high impact)."""
 
 
 class ContractRiskAgent:

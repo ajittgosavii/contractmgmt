@@ -31,6 +31,7 @@ from agents.agent_risk import ContractRiskAgent
 from agents.agent_comparator import ContractComparatorAgent
 from agents.agent_qa import ContractQAAgent, SUGGESTED_QUESTIONS
 from utils import theme
+from utils import risk_viz
 from utils.file_parser import extract_text, save_uploaded_file
 from utils.ocr import extract_text_with_ocr
 from utils.config import CONTRACT_TYPES, CONTRACT_STATUSES, UPLOAD_DIR
@@ -1033,6 +1034,8 @@ def render_risk_analysis():
                 try:
                     result = agent.analyze_risk(contract_text)
                     st.session_state["risk_result"] = result
+                    # Kept so clause highlighting survives the rerun after analysis.
+                    st.session_state["risk_contract_text"] = contract_text
                     if contract_id:
                         db.save_risk_analysis(contract_id, result)
                     log_action(current_user, ACTION_RISK_ANALYSIS, "contract",
@@ -1050,6 +1053,9 @@ def render_risk_analysis():
     result = st.session_state.get("risk_result")
     if result:
         st.divider()
+        st.markdown(risk_viz.RISK_CSS, unsafe_allow_html=True)
+        source_text = st.session_state.get("risk_contract_text", "") or contract_text
+        risky_clauses = result.get("risky_clauses", [])
 
         col1, col2 = st.columns([1, 2])
         with col1:
@@ -1061,17 +1067,39 @@ def render_risk_analysis():
             st.markdown(f'### Risk Level: <span class="{css_class}">{level}</span>', unsafe_allow_html=True)
             st.markdown(f"**Executive Summary:** {result.get('executive_summary', 'N/A')}")
 
+        if risky_clauses:
+            st.markdown(theme.section_title("Why the score looks like this", "📊"),
+                        unsafe_allow_html=True)
+            viz1, viz2 = st.columns([1, 1])
+            with viz1:
+                st.plotly_chart(risk_viz.risk_driver_chart(risky_clauses), use_container_width=True)
+            with viz2:
+                st.plotly_chart(risk_viz.risk_matrix_chart(risky_clauses), use_container_width=True)
+            st.caption("Exposure = likelihood × impact (1–25). Severity is shown by colour, "
+                       "shape and label, so it stays readable for colourblind users.")
+
         st.subheader("Risky Clauses")
-        for clause in result.get("risky_clauses", []):
+        for i, clause in enumerate(risky_clauses):
             severity = clause.get("severity", "Medium")
             color = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🟢"}.get(severity, "⚪")
             with st.expander(f"{color} [{severity}] {clause.get('risk_type', 'Risk')}"):
-                st.write(f"**Clause:** {clause.get('clause_text', 'N/A')}")
+                st.markdown(risk_viz.why_panel_html(clause), unsafe_allow_html=True)
+
+                excerpt = risk_viz.highlight_clause_html(
+                    source_text, clause.get("clause_text", ""), severity)
+                if excerpt:
+                    st.markdown(excerpt, unsafe_allow_html=True)
+                else:
+                    st.write(f"**Clause:** {clause.get('clause_text', 'N/A')}")
+                    if source_text:
+                        st.caption("This clause was paraphrased by the agent and could not be "
+                                   "located verbatim in the source document.")
+
                 st.write(f"**Explanation:** {clause.get('explanation', 'N/A')}")
                 st.info(f"**Recommendation:** {clause.get('recommendation', 'N/A')}")
 
                 # Save clause to library
-                if st.button(f"Save recommendation to Clause Library", key=f"save_clause_{clause.get('risk_type', '')}"):
+                if st.button(f"Save recommendation to Clause Library", key=f"save_clause_{i}_{clause.get('risk_type', '')}"):
                     save_clause(
                         title=f"Recommended: {clause.get('risk_type', 'Clause')}",
                         category=clause.get("risk_type", "Other"),

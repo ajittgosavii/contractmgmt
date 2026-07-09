@@ -21,13 +21,23 @@ def _safe_text(text: str) -> str:
     return text.encode("latin-1", errors="replace").decode("latin-1")
 
 
+def _line(pdf, text: str = "", h: int = 6):
+    """Write one full-width line and return the cursor to the left margin.
+
+    multi_cell defaults to new_x=RIGHT, which parks the cursor at the right
+    margin and leaves the next full-width (w=0) call with zero usable width.
+    """
+    pdf.cell(w=0, h=h, text=_safe_text(text), new_x="LMARGIN", new_y="NEXT")
+
+
 def _safe_multi_cell(pdf, text: str, h: int = 5):
-    """Write text to PDF, catching any rendering errors gracefully."""
+    """Write wrapped text to PDF, catching any rendering errors gracefully."""
     text = _safe_text(text)
     if not text.strip():
+        pdf.ln(h)
         return
     try:
-        pdf.multi_cell(w=0, h=h, text=text)
+        pdf.multi_cell(w=0, h=h, text=text, new_x="LMARGIN", new_y="NEXT")
     except Exception:
         # Fallback: write line by line, skip any that fail
         for line in text.split("\n"):
@@ -35,7 +45,7 @@ def _safe_multi_cell(pdf, text: str, h: int = 5):
             if not line:
                 continue
             try:
-                pdf.cell(w=0, h=h, text=line[:120], ln=True)
+                _line(pdf, line[:120], h)
             except Exception:
                 pass
 
@@ -49,20 +59,20 @@ def export_contract_pdf(contract_text: str, metadata: dict = None) -> bytes:
 
     pdf.set_font("Helvetica", "B", 16)
     title = metadata.get("contract_type", "Contract") if metadata else "Contract"
-    pdf.cell(0, 10, _safe_text(title), ln=True, align="C")
+    pdf.cell(0, 10, _safe_text(title), new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(5)
 
     if metadata:
         pdf.set_font("Helvetica", "", 10)
-        pdf.cell(0, 6, f"Date: {metadata.get('effective_date', 'N/A')}", ln=True)
-        pdf.cell(0, 6, f"Status: {metadata.get('status', 'Draft')}", ln=True)
+        _line(pdf, f"Date: {metadata.get('effective_date', 'N/A')}")
+        _line(pdf, f"Status: {metadata.get('status', 'Draft')}")
         pdf.ln(5)
 
     pdf.set_font("Helvetica", "", 11)
-    for line in contract_text.split("\n"):
-        pdf.multi_cell(0, 6, _safe_text(line))
+    for line in (contract_text or "").split("\n"):
+        _safe_multi_cell(pdf, line, h=6)
 
-    return pdf.output()
+    return bytes(pdf.output())
 
 
 def export_contract_docx(contract_text: str, metadata: dict = None) -> bytes:
@@ -92,25 +102,23 @@ def export_risk_report_pdf(analysis: dict) -> bytes:
     pdf.set_auto_page_break(auto=True, margin=15)
 
     pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, "Contract Risk Analysis Report", ln=True, align="C")
+    pdf.cell(0, 10, "Contract Risk Analysis Report", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(5)
 
     pdf.set_font("Helvetica", "", 11)
-    pdf.cell(0, 6, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True)
-    pdf.cell(0, 6, f"Risk Score: {analysis.get('overall_risk_score', 'N/A')} / 100", ln=True)
-    pdf.cell(0, 6, f"Risk Level: {analysis.get('risk_level', 'N/A')}", ln=True)
+    _line(pdf, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    _line(pdf, f"Risk Score: {analysis.get('overall_risk_score', 'N/A')} / 100")
+    _line(pdf, f"Risk Level: {analysis.get('risk_level', 'N/A')}")
     pdf.ln(5)
 
     pdf.set_font("Helvetica", "B", 13)
-    pdf.cell(0, 8, "Executive Summary", ln=True)
+    _line(pdf, "Executive Summary", h=8)
     pdf.set_font("Helvetica", "", 10)
-    summary = _safe_text(analysis.get("executive_summary", "N/A"))
-    if summary:
-        pdf.multi_cell(0, 6, summary)
+    _safe_multi_cell(pdf, analysis.get("executive_summary", "N/A"), h=6)
     pdf.ln(5)
 
     pdf.set_font("Helvetica", "B", 13)
-    pdf.cell(0, 8, "Risky Clauses", ln=True)
+    _line(pdf, "Risky Clauses", h=8)
     pdf.ln(2)
 
     for clause in analysis.get("risky_clauses", []):
@@ -120,7 +128,7 @@ def export_risk_report_pdf(analysis: dict) -> bytes:
         recommendation = _safe_text(clause.get("recommendation", ""))
 
         pdf.set_font("Helvetica", "B", 10)
-        pdf.cell(0, 6, f"[{severity}] {risk_type}"[:80], ln=True)
+        _line(pdf, f"[{severity}] {risk_type}"[:80])
 
         if explanation:
             pdf.set_font("Helvetica", "", 9)
@@ -136,7 +144,7 @@ def export_risk_report_pdf(analysis: dict) -> bytes:
     missing = analysis.get("missing_protections", [])
     if missing:
         pdf.set_font("Helvetica", "B", 13)
-        pdf.cell(0, 8, "Missing Protections", ln=True)
+        _line(pdf, "Missing Protections", h=8)
         pdf.set_font("Helvetica", "", 9)
         for m in missing:
             text = _safe_text(f"- {m.get('protection', '')}: {m.get('recommendation', '')}")
@@ -147,14 +155,14 @@ def export_risk_report_pdf(analysis: dict) -> bytes:
     negotiations = analysis.get("negotiation_points", [])
     if negotiations:
         pdf.set_font("Helvetica", "B", 13)
-        pdf.cell(0, 8, "Negotiation Points", ln=True)
+        _line(pdf, "Negotiation Points", h=8)
         pdf.set_font("Helvetica", "", 9)
         for n in negotiations:
             text = _safe_text(f"[{n.get('priority', '')}] {n.get('point', '')} - {n.get('suggested_change', '')}")
             _safe_multi_cell(pdf, text)
         pdf.ln(3)
 
-    return pdf.output()
+    return bytes(pdf.output())
 
 
 def export_contracts_excel(df) -> bytes:
