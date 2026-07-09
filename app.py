@@ -5,6 +5,7 @@ Powered by OpenAI GPT-4o
 
 import io
 import os
+import re
 import html
 import glob
 import zipfile
@@ -38,6 +39,7 @@ from utils import theme
 from utils import risk_viz
 from utils import portfolio as pf
 from utils import retrieval
+from utils import redline_apply
 from utils.file_parser import extract_text, save_uploaded_file
 from utils.ocr import extract_text_with_ocr
 from utils.config import CONTRACT_TYPES, CONTRACT_STATUSES, UPLOAD_DIR
@@ -354,6 +356,26 @@ def _get_agent(agent_name: str):
         st.warning("Please enter your OpenAI API key in the sidebar.")
         st.stop()
     return AGENT_PROFILES[agent_name]["class"](api_key=st.session_state["api_key"])
+
+
+def _download_stem(contract_type: str) -> str:
+    """A filesystem-safe, dated filename stem, e.g. NDA_Non_Disclosure_draft_2026-07-09."""
+    safe = re.sub(r"[^A-Za-z0-9]+", "_", str(contract_type)).strip("_") or "contract"
+    return f"{safe[:48]}_draft_{date.today().isoformat()}"
+
+
+def _try_export(builder, label: str, *args):
+    """Build an export, surfacing a failure inline instead of killing the page.
+
+    An export is the last step of a long, expensive workflow. A single bad
+    character should cost the user that one format, not the generated draft and
+    every other control on the page.
+    """
+    try:
+        return builder(*args)
+    except Exception as e:
+        st.error(f"{label} export failed: {e}")
+        return None
 
 
 def _smart_extract(uploaded_file) -> tuple[str, bool]:
@@ -1003,13 +1025,20 @@ def render_draft_generation():
                     st.error(f"Refinement failed: {e}")
 
         st.divider()
+        meta = {"contract_type": contract_type, "status": "Draft"}
+        stem = _download_stem(contract_type)
+
         exp_col1, exp_col2, exp_col3 = st.columns(3)
         with exp_col1:
-            pdf_bytes = export_contract_pdf(edited_draft, {"contract_type": contract_type, "status": "Draft"})
-            st.download_button("Download PDF", pdf_bytes, "contract_draft.pdf", "application/pdf")
+            pdf_bytes = _try_export(export_contract_pdf, "PDF", edited_draft, meta)
+            if pdf_bytes:
+                st.download_button("Download PDF", pdf_bytes, f"{stem}.pdf", "application/pdf")
         with exp_col2:
-            docx_bytes = export_contract_docx(edited_draft, {"contract_type": contract_type, "status": "Draft"})
-            st.download_button("Download DOCX", docx_bytes, "contract_draft.docx")
+            docx_bytes = _try_export(export_contract_docx, "DOCX", edited_draft, meta)
+            if docx_bytes:
+                st.download_button(
+                    "Download DOCX", docx_bytes, f"{stem}.docx",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         with exp_col3:
             if st.button("Save Draft to Repository"):
                 db.save_draft(contract_type, form_values, edited_draft)
@@ -1024,13 +1053,22 @@ def render_risk_analysis():
     st.markdown('<div class="main-header">🛡️ Risk Analysis</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="agent-card"><span class="agent-name">{AGENT_PROFILES["RiskRadar"]["icon"]} RiskRadar Agent</span><div class="agent-desc">{AGENT_PROFILES["RiskRadar"]["description"]}</div></div>', unsafe_allow_html=True)
 
-    source = st.radio("Select contract source:", ["Upload New", "From Repository"], horizontal=True)
+    # "Current Draft" closes the loop: draft → risk → redline → merged final draft.
+    sources = ["Upload New", "From Repository"]
+    if st.session_state.get("draft_result"):
+        sources.insert(0, "Current Draft")
+    source = st.radio("Select contract source:", sources, horizontal=True)
 
     contract_text = ""
     contract_id = None
     contract_name = ""
 
-    if source == "Upload New":
+    if source == "Current Draft":
+        contract_text = st.session_state["draft_result"]
+        contract_name = "Current Draft"
+        st.caption(f"Analysing the draft generated in **Draft Generation** "
+                   f"({len(contract_text):,} characters).")
+    elif source == "Upload New":
         uploaded = st.file_uploader("Upload contract", type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "tiff"], key="risk_upload")
         if uploaded:
             try:
@@ -2112,10 +2150,113 @@ def render_redline():
                 st.success(f"**We respond:** {position['response']}")
 
     st.divider()
-    st.download_button("Download Negotiation Playbook (DOCX)",
-                       export_redline_docx(playbook, st.session_state.get("redline_type", "Contract")),
-                       "negotiation_playbook.docx",
-                       "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    playbook_docx = _try_export(export_redline_docx, "Playbook DOCX", playbook,
+                                st.session_state.get("redline_type", "Contract"))
+    if playbook_docx:
+        st.download_button("Download Negotiation Playbook (DOCX)", playbook_docx,
+                           "negotiation_playbook.docx",
+                           "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+    _render_redline_merge(positions)
+
+
+# ---------------------------------------------------------------------------
+# Merge accepted redlines back into the contract -> one consistent final draft
+# ---------------------------------------------------------------------------
+_MERGE_STATUS_NOTE = {
+    redline_apply.NOT_LOCATED: ("❌", "could not be located in the source text"),
+    redline_apply.OVERLAP: ("⚠️", "overlaps a higher-confidence edit and was skipped"),
+    redline_apply.EMPTY: ("⚠️", "has no replacement language"),
+}
+
+
+def _render_redline_merge(positions):
+    st.divider()
+    st.markdown(theme.section_title("Merge into Final Draft", "🧬"), unsafe_allow_html=True)
+
+    source_text = st.session_state.get("risk_contract_text", "")
+    if not source_text:
+        st.info("The source text of the analysed contract is not in this session, so redlines "
+                "cannot be spliced back. Re-run **Risk Analysis** on the contract, then return here.")
+        return
+
+    st.caption("Choose which positions to accept. Each accepted redline replaces the matching "
+               "clause in the original text; anything that cannot be matched is reported, never "
+               "silently dropped.")
+
+    accepted: set[int] = set()
+    for i, position in enumerate(positions):
+        severity = position.get("severity", "Medium")
+        icon = {"Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🟢"}.get(severity, "⚪")
+        label = f"{icon} {position.get('risk_type', 'Clause')} ({severity})"
+        if st.checkbox(label, value=True, key=f"merge_accept_{i}"):
+            accepted.add(i)
+
+    append_unlocated = st.checkbox(
+        "Append unmatched redlines as a 'Schedule of Proposed Amendments'", value=False,
+        help="Keeps clauses that could not be matched to existing language, as an addendum.")
+
+    if not accepted:
+        st.caption("Select at least one position to merge.")
+        return
+
+    if st.button(f"Merge {len(accepted)} redline(s) into the contract", type="primary",
+                 use_container_width=True):
+        result = redline_apply.merge_redlines(source_text, positions, accepted, append_unlocated)
+        st.session_state["merged_draft"] = result.text
+        st.session_state["merge_report"] = [
+            {"risk_type": it.risk_type, "status": it.status, "score": it.score}
+            for it in result.items
+        ]
+        st.session_state["merge_before"] = source_text
+
+    merged = st.session_state.get("merged_draft")
+    if not merged:
+        return
+
+    report = st.session_state.get("merge_report", [])
+    applied = [r for r in report if r["status"] == redline_apply.APPLIED]
+    st.success(f"Applied {len(applied)} of {len(report)} selected redline(s).")
+
+    for item in report:
+        if item["status"] != redline_apply.APPLIED:
+            icon, note = _MERGE_STATUS_NOTE.get(item["status"], ("⚠️", item["status"]))
+            st.warning(f"{icon} **{item['risk_type']}** {note}.")
+
+    before = st.session_state.get("merge_before", source_text)
+    tab_final, tab_diff = st.tabs(["Final draft", "What changed"])
+    with tab_final:
+        merged = st.text_area("Final draft (editable)", merged, height=460, key="merged_draft_area")
+        st.session_state["merged_draft"] = merged
+    with tab_diff:
+        diff = redline_apply.unified_diff(before, merged)
+        st.code(diff or "No textual difference.", language="diff")
+
+    st.divider()
+    contract_type = st.session_state.get("redline_type", "Contract")
+    meta = {"contract_type": contract_type, "status": "Redlined"}
+    stem = _download_stem(f"{contract_type}_redlined")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        pdf_bytes = _try_export(export_contract_pdf, "PDF", merged, meta)
+        if pdf_bytes:
+            st.download_button("Download Final Draft (PDF)", pdf_bytes, f"{stem}.pdf",
+                               "application/pdf")
+    with col2:
+        docx_bytes = _try_export(export_contract_docx, "DOCX", merged, meta)
+        if docx_bytes:
+            st.download_button(
+                "Download Final Draft (DOCX)", docx_bytes, f"{stem}.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    with col3:
+        if st.button("Send to Draft Generation"):
+            st.session_state["draft_result"] = merged
+            st.session_state["draft_history"] = []
+            db.save_draft(contract_type, {"source": "redline_merge"}, merged)
+            log_action(current_user, ACTION_REFINE_DRAFT, "draft",
+                       entity_name=f"Redline merge — {contract_type}")
+            st.success("Final draft sent to Draft Generation and saved.")
 
 
 # =====================================================================
