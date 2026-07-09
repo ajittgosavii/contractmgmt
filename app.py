@@ -3,6 +3,10 @@ Infosys Cobalt Powered AI Contract Lifecycle Management
 Powered by OpenAI GPT-4o
 """
 
+import io
+import os
+import glob
+import zipfile
 import json
 import streamlit as st
 import pandas as pd
@@ -337,6 +341,97 @@ def _smart_extract(uploaded_file) -> tuple[str, bool]:
 
 
 # ---------------------------------------------------------------------------
+# Demo contract pack (bundled in ./demo_contracts)
+# ---------------------------------------------------------------------------
+DEMO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "demo_contracts")
+
+# Pre-set metadata so a one-click load produces a fully populated, on-message
+# dashboard (types, dates, and plausible risk scores) without needing an API call.
+DEMO_META = {
+    "01_MSA_CloudScale_Acme_LowRisk.txt": {
+        "name": "CloudScale MSA — Acme (demo)", "contract_type": "MSA (Master Service Agreement)",
+        "status": "Active", "effective_date": "2025-03-01", "expiration_date": "2027-02-28",
+        "risk_score": 22, "summary": "Balanced master services agreement with Net-30 terms, mutual indemnification, a liability cap, GDPR/CCPA commitments and a 99.9% SLA."},
+    "02_SaaS_Subscription_Nimbus_HighRisk.txt": {
+        "name": "Nimbus SaaS Subscription — Riverstone (demo)", "contract_type": "Vendor Agreement",
+        "status": "Active", "effective_date": "2024-08-21", "expiration_date": "2026-08-20",
+        "risk_score": 88, "summary": "High-risk SaaS subscription: auto-renewal, unlimited customer liability, a $100 vendor cap, perpetual data license, no data-protection addendum and one-sided indemnification."},
+    "03_Mutual_NDA_Infosys_Meridian.txt": {
+        "name": "Mutual NDA — Infosys & Meridian (demo)", "contract_type": "NDA (Non-Disclosure Agreement)",
+        "status": "Active", "effective_date": "2026-06-15", "expiration_date": "2029-06-14",
+        "risk_score": 18, "summary": "Standard mutual non-disclosure agreement with a 3-year term and 3-year survival of confidentiality obligations."},
+    "04_SOW_DataPlatform_Migration.txt": {
+        "name": "SOW — Data Platform Migration (demo)", "contract_type": "SOW (Statement of Work)",
+        "status": "Active", "effective_date": "2026-01-15", "expiration_date": "2026-09-30",
+        "risk_score": 35, "summary": "Fixed-fee statement of work with five milestones, owners, due dates and milestone-based payments, plus liquidated-damages service credits."},
+    "05_Employment_SeniorEngineer_Sharma.txt": {
+        "name": "Employment Agreement — Sr. Engineer (demo)", "contract_type": "Employment Agreement",
+        "status": "Active", "effective_date": "2026-04-01", "expiration_date": "",
+        "risk_score": 55, "summary": "At-will employment agreement with a 12-month non-compete, IP assignment, confidentiality and a 3-month severance provision."},
+    "06_Vendor_Supply_Globex_ExpiringSoon.txt": {
+        "name": "Vendor Supply — Globex & Orion (demo)", "contract_type": "Vendor Agreement",
+        "status": "Active", "effective_date": "2024-08-01", "expiration_date": "2026-07-31",
+        "risk_score": 42, "summary": "Two-year component supply agreement (expiring soon) with late-delivery penalties, an 18-month warranty and Net-45 terms in INR."},
+    "07_Office_Lease_TechPark_Bangalore.txt": {
+        "name": "Office Lease — Prestige Tech Park (demo)", "contract_type": "Lease Agreement",
+        "status": "Active", "effective_date": "2025-10-01", "expiration_date": "2030-09-30",
+        "risk_score": 30, "summary": "Five-year commercial office lease with a 5% annual escalation, 36-month lock-in and a 10-month security deposit."},
+}
+
+
+def _risk_level(score: int) -> str:
+    if score >= 80: return "Critical"
+    if score >= 60: return "High"
+    if score >= 40: return "Medium"
+    return "Low"
+
+
+def _demo_files() -> list[str]:
+    return sorted(glob.glob(os.path.join(DEMO_DIR, "*.txt")))
+
+
+def _build_demo_zip() -> bytes | None:
+    files = _demo_files()
+    if not files:
+        return None
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for f in files:
+            z.write(f, os.path.basename(f))
+    return buf.getvalue()
+
+
+def _load_demo_contracts() -> int:
+    """Load the bundled demo contracts straight into the repository with
+    pre-set type / status / dates / risk so the dashboard is instantly populated."""
+    count = 0
+    for path in _demo_files():
+        base = os.path.basename(path)
+        meta = DEMO_META.get(base, {})
+        try:
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+        except OSError:
+            continue
+        score = meta.get("risk_score")
+        db.save_contract({
+            "filename": meta.get("name", base),
+            "contract_type": meta.get("contract_type", "Custom"),
+            "status": meta.get("status", "Active"),
+            "effective_date": meta.get("effective_date", ""),
+            "expiration_date": meta.get("expiration_date", ""),
+            "full_text": text,
+            "risk_score": score,
+            "risk_level": _risk_level(score) if score is not None else "",
+            "extracted_elements": {"summary": meta.get("summary", "")},
+            "tags": "demo",
+            "notes": "Loaded from the built-in demo pack.",
+        })
+        count += 1
+    return count
+
+
+# ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
 def _nav_btn(label: str, key: str):
@@ -440,8 +535,17 @@ def render_dashboard():
     if contracts_df.empty:
         st.markdown(theme.empty_state(
             "No contracts yet",
-            "Upload your first contract via Upload & Review to unlock analytics, risk scoring and the Contract Copilot.",
+            "Upload a contract via Upload & Review, or load the built-in demo pack to explore analytics, risk scoring and the Contract Copilot.",
             "📄"), unsafe_allow_html=True)
+        if check_permission(current_user, "analyst"):
+            _dc1, _dc2, _dc3 = st.columns([1, 1.4, 1])
+            with _dc2:
+                st.write("")
+                if st.button("⚡ Load demo contracts", use_container_width=True, type="primary"):
+                    n = _load_demo_contracts()
+                    log_action(current_user, ACTION_BULK_UPLOAD, "contract", details=f"Loaded {n} demo contracts")
+                    st.success(f"Loaded {n} demo contracts!")
+                    st.rerun()
         return
 
     st.markdown(theme.section_title("Portfolio Analytics", "📈"), unsafe_allow_html=True)
@@ -638,6 +742,28 @@ def render_bulk_upload():
     if not check_permission(current_user, "analyst"):
         st.warning("You need **Analyst** or **Admin** role to use bulk upload.")
         return
+
+    # ── Built-in demo pack ──
+    _repo_empty = db.load_contracts().empty
+    with st.expander("📥 Demo contracts — download & upload, or load instantly", expanded=_repo_empty):
+        st.caption("A built-in pack of 7 sample contracts with varied types, risk levels and expiry dates — ideal for demos.")
+        dc1, dc2 = st.columns(2)
+        with dc1:
+            zbytes = _build_demo_zip()
+            if zbytes:
+                st.download_button(
+                    "⬇️ Download demo pack (.zip)", zbytes, "demo_contracts.zip", "application/zip",
+                    use_container_width=True,
+                    help="Download, unzip, then drag the .txt files into the uploader below to run live AI extraction.")
+            else:
+                st.info("Demo pack files not found in this deployment.")
+        with dc2:
+            if st.button("⚡ Load demo contracts into repository", use_container_width=True,
+                         help="Instantly populate the Dashboard & Repository with all 7 demo contracts (with risk scores)."):
+                n = _load_demo_contracts()
+                log_action(current_user, ACTION_BULK_UPLOAD, "contract", details=f"Loaded {n} demo contracts")
+                st.success(f"✅ Loaded {n} demo contracts. Open the **Dashboard** or **Repository** to see them.")
+                st.balloons()
 
     uploaded_files = st.file_uploader(
         "Upload multiple contracts",
