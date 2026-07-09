@@ -1,11 +1,16 @@
-streamlit>=1.32.0
+# streamlit and fpdf2 are pinned, not floated. Both shipped breaking changes that
+# only surfaced on Streamlit Cloud (which installs the newest allowed release):
+#   - fpdf2 multi_cell defaults to new_x=RIGHT, so a second full-width cell has
+#     zero usable width -> FPDFException.
+#   - streamlit's download_button stopped accepting the bytearray fpdf2 returns.
+streamlit==1.59.0
 openai>=1.30.0
 pandas>=2.0.0
 plotly>=5.18.0
 python-docx>=1.1.0
 PyPDF2>=3.0.0
 pdfplumber>=0.10.0
-fpdf2>=2.7.0
+fpdf2==2.8.7
 openpyxl>=3.1.2
 python-dateutil>=2.8.0
 # OCR support
